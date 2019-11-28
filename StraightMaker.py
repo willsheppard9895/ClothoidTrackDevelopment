@@ -1,4 +1,5 @@
-﻿
+﻿import sys
+
 ## TO DO - sort straight edge maker
 rootpath = 'C:\\VENLAB data\\shared_modules'
 sys.path.append(rootpath)
@@ -9,6 +10,7 @@ sys.path.append(rootpath)
 
 
 import viz
+import vizmat
 import clothoid_curve as cc
 import numpy as np
 import matplotlib.pyplot as plt
@@ -53,6 +55,136 @@ def setStage():
 
 ABOVEGROUND = .01 #distance above ground
 
+class vizStraight():
+
+
+    def __init__(self, startpos, length = 50, size = 500, z_dir = 1, colour = viz.WHITE, primitive = viz.QUAD_STRIP, primitive_width=None, road_width = 3.0, texturefile = None, midline_step_size = .005):
+        """ultimately this class should inherit a super class called road section. But for now let's just make a straight"""
+
+        """returns a straight, given some starting coords and length"""
+        
+        print('Creating vizStraight')
+        
+        self.RoadLength = length                
+
+        self.RoadStart = startpos #2 dimensional x, z array.
+        self.RoadEnd = [startpos[0],startpos[1]+(length*z_dir)] #currently only if it's north or south orientation. #2dim xz array
+        self.midline_step_size = midline_step_size        
+        
+        self.Midline_Pts = int(round(self.RoadLength / self.midline_step_size))
+        
+        #self.RoadSize_Pts = size
+        self.RoadWidth = road_width		
+        if self.RoadWidth == 0:
+            self.HalfRoadWidth = 0
+        else:
+            self.HalfRoadWidth = road_width/2.0		
+
+        self.Z_direction = z_dir #[1, -1] 
+        self.colour = colour
+        self.primitive = primitive
+        self.primitive_width = primitive_width
+    
+        if primitive_width is None:
+            if primitive == viz.QUAD_STRIP:
+                primitive_width = .05
+                self.primitive_width = primitive_width 
+
+            elif primitive == viz.LINE_STRIP:
+                self.primitive_width = 2
+                viz.linewidth(self.primitive_width)
+                primitive_width = 0 #so I can use the same code below for both primitive types.	
+                
+        if self.RoadWidth == 0:
+            self.MidlineEdge = self.StraightEdgeMaker([self.RoadStart[0],ABOVEGROUND,self.RoadStart[1]], [self.RoadEnd[0],ABOVEGROUND,self.RoadEnd[1]], primitive_width)
+            self.InsideEdge = None
+            self.OutsideEdge = None
+        else:
+            self.InsideEdge_Start = [self.RoadStart[0]-self.HalfRoadWidth,ABOVEGROUND, self.RoadStart[1]] 
+            self.InsideEdge_End = [self.RoadEnd[0]-self.HalfRoadWidth,ABOVEGROUND, self.RoadEnd[1]] 
+            self.OutsideEdge_Start = [self.RoadStart[0]+self.HalfRoadWidth,ABOVEGROUND, self.RoadStart[1]]
+            self.OutsideEdge_End = [self.RoadEnd[0]+self.HalfRoadWidth,ABOVEGROUND, self.RoadEnd[1]]
+
+            self.InsideEdge = self.StraightEdgeMaker(self.InsideEdge_Start, self.InsideEdge_End, primitive_width)
+            self.OutsideEdge = self.StraightEdgeMaker(self.OutsideEdge_Start, self.OutsideEdge_End, primitive_width)
+
+              #make it so both edges have the same center. The setCenter is in local coordinates
+            self.InsideEdge.setCenter([-self.HalfRoadWidth, 0, 0])
+            self.OutsideEdge.setCenter([+self.HalfRoadWidth, 0, 0])	
+
+            self.MidlineEdge = None	
+
+        
+        self.midline = self.StraightMidlineMaker()
+
+                #ensure all bends start invisible.
+        self.ToggleVisibility(viz.OFF)
+
+        
+        
+        self.Texturefile = texturefile
+        if primitive == viz.QUAD_STRIP: 
+            self.AddTexture()
+
+        #put default widths if not given        
+
+    def AddTexture(self):
+        """function to add texture to the viz.primitive"""
+
+        pass 
+
+
+    def StraightEdgeMaker(self, startpos, endpos, primitive_width):
+        """function returns a bend edge"""
+        i = 0
+        viz.startlayer(self.primitive) 
+
+
+        print ("Startpos: ", startpos)
+        print ("Endpos: ", endpos)
+                
+        viz.vertex([startpos[0]-primitive_width, startpos[1], startpos[2]])        
+        viz.vertexcolor(self.colour)
+        viz.vertex([startpos[0]+primitive_width, startpos[1], startpos[2]])
+        viz.vertexcolor(self.colour)
+        viz.vertex([endpos[0]-primitive_width, endpos[1], endpos[2]])
+        viz.vertexcolor(self.colour)
+        viz.vertex([endpos[0]+primitive_width, endpos[1], endpos[2]])		
+        viz.vertexcolor(self.colour)
+
+        straightedge = viz.endlayer()
+
+        return (straightedge)
+    
+    def StraightMidlineMaker(self):
+        """returns midline"""
+        #make midline        
+            
+        midline_x = np.linspace(self.RoadStart[0], self.RoadEnd[0], self.Midline_Pts)
+        midline_z = np.linspace(self.RoadStart[1], self.RoadEnd[1], self.Midline_Pts)
+        
+        midline = np.column_stack((midline_x, midline_z))
+            
+        return midline
+
+    def ToggleVisibility(self, visible = viz.ON):
+        """switches straights off or on"""
+
+        if self.RoadWidth == 0:
+            self.MidlineEdge.visible(visible)
+        else:
+            self.InsideEdge.visible(visible)
+            self.OutsideEdge.visible(visible)
+
+    
+    def setAlpha(self, alpha = 1):
+        
+        if self.RoadWidth == 0:
+            self.MidlineEdge.alpha(alpha)
+        else:
+            self.InsideEdge.alpha(alpha)
+            self.OutsideEdge.alpha(alpha)
+
 class vizStraightBearing():
 
 
@@ -61,13 +193,16 @@ class vizStraightBearing():
 
         """returns a straight, given some starting coords and length"""
 
+        print('Creating vizStraightBearing')
+        
         self.RoadLength = length   
         
         self.Bearing = bearing
 
         self.RoadStart = startpos #2 dimensional x, z array.
+        
         self.RoadEnd = [(startpos[0]+(self.RoadLength * (np.sin(self.Bearing)))), (startpos[1]+(self.RoadLength*(np.cos(self.Bearing))))]#2dim xz array
-        print(self.RoadEnd)
+        #print(self.RoadEnd)
         
         self.midline_step_size = midline_step_size        
         
@@ -96,6 +231,8 @@ class vizStraightBearing():
                 viz.linewidth(self.primitive_width)
                 primitive_width = 0 #so I can use the same code below for both primitive types.	
         
+        
+        ### this is where the trouble is!!!
         if self.RoadWidth == 0:
             self.MidlineEdge = self.StraightEdgeMaker([self.RoadStart[0],ABOVEGROUND,self.RoadStart[1]], [self.RoadEnd[0],ABOVEGROUND,self.RoadEnd[1]], primitive_width, bearing = self.Bearing)
             self.InsideEdge = None
@@ -248,137 +385,3 @@ Straight.setAlpha(1)
 
 
 
-class vizStraight():
-
-
-    def __init__(self, bearing, startpos, length = 50, size = 500, z_dir = 1, colour = viz.WHITE, primitive = viz.QUAD_STRIP, primitive_width=None, road_width = 3.0, texturefile = None, midline_step_size = .005):
-        """ultimately this class should inherit a super class called road section. But for now let's just make a straight"""
-
-        """returns a straight, given some starting coords and length"""
-
-        self.RoadLength = length   
-        
-        self.Bearing = bearing
-
-        self.RoadStart = startpos #2 dimensional x, z array.
-        self.RoadEnd = [(startpos[0]+(self.RoadLength * (np.sin(self.Bearing)))), (startpos[1]+(self.RoadLength*(np.cos(self.Bearing))))]#2dim xz array
-        
-        self.midline_step_size = midline_step_size        
-        
-        self.Midline_Pts = int(round(self.RoadLength / self.midline_step_size))
-        
-        #self.RoadSize_Pts = size
-        self.RoadWidth = road_width		
-        if self.RoadWidth == 0:
-            self.HalfRoadWidth = 0
-        else:
-            self.HalfRoadWidth = road_width/2.0		
-
-        self.Z_direction = z_dir #[1, -1] 
-        
-        self.colour = colour
-        self.primitive = primitive
-        self.primitive_width = primitive_width
-    
-        if primitive_width is None:
-            if primitive == viz.QUAD_STRIP:
-                primitive_width = .05
-                self.primitive_width = primitive_width 
-
-            elif primitive == viz.LINE_STRIP:
-                self.primitive_width = 2
-                viz.linewidth(self.primitive_width)
-                primitive_width = 0 #so I can use the same code below for both primitive types.	
-        
-        if self.RoadWidth == 0:
-            self.MidlineEdge = self.StraightEdgeMaker([self.RoadStart[0],ABOVEGROUND,self.RoadStart[1]], [self.RoadEnd[0],ABOVEGROUND,self.RoadEnd[1]], primitive_width)
-            self.InsideEdge = None
-            self.OutsideEdge = None
-        else:
-            self.InsideEdge_Start = [self.RoadStart[0]-self.HalfRoadWidth,ABOVEGROUND, self.RoadStart[1]] 
-            self.InsideEdge_End = [self.RoadEnd[0]-self.HalfRoadWidth,ABOVEGROUND, self.RoadEnd[1]] 
-            self.OutsideEdge_Start = [self.RoadStart[0]+self.HalfRoadWidth,ABOVEGROUND, self.RoadStart[1]]
-            self.OutsideEdge_End = [self.RoadEnd[0]+self.HalfRoadWidth,ABOVEGROUND, self.RoadEnd[1]]
-
-            self.InsideEdge = self.StraightEdgeMaker(self.InsideEdge_Start, self.InsideEdge_End, primitive_width)
-            self.OutsideEdge = self.StraightEdgeMaker(self.OutsideEdge_Start, self.OutsideEdge_End, primitive_width)
-
-              #make it so both edges have the same center. The setCenter is in local coordinates
-            self.InsideEdge.setCenter([-self.HalfRoadWidth, 0, 0])
-            self.OutsideEdge.setCenter([+self.HalfRoadWidth, 0, 0])	
-
-            self.MidlineEdge = None	
-
-        
-        self.midline = self.StraightMidlineMaker()
-
-                #ensure all bends start invisible.
-        self.ToggleVisibility(viz.OFF)
-
-        
-        
-        self.Texturefile = texturefile
-        if primitive == viz.QUAD_STRIP: 
-            self.AddTexture()
-
-        #put default widths if not given        
-
-    def AddTexture(self):
-        """function to add texture to the viz.primitive"""
-
-        pass 
-
-
-    def StraightEdgeMaker(self, startpos, endpos, primitive_width):
-        """function returns a bend edge"""
-        i = 0
-        viz.startlayer(self.primitive) 
-
-
-        print ("Startpos: ", startpos)
-        print ("Endpos: ", endpos)
-                
-        viz.vertex([startpos[0]-primitive_width, startpos[1], startpos[2]])        
-        viz.vertexcolor(self.colour)
-        
-        viz.vertex([startpos[0]+primitive_width, startpos[1], startpos[2]])
-        viz.vertexcolor(self.colour)
-        
-        viz.vertex([endpos[0]-primitive_width, endpos[1], endpos[2]])
-        viz.vertexcolor(self.colour)
-        
-        viz.vertex([endpos[0]+primitive_width, endpos[1], endpos[2]])		
-        viz.vertexcolor(self.colour)
-
-        straightedge = viz.endlayer()
-
-        return (straightedge)
-    
-    def StraightMidlineMaker(self):
-        """returns midline"""
-        #make midline        
-            
-        midline_x = np.linspace(self.RoadStart[0], self.RoadEnd[0], self.Midline_Pts)
-        midline_z = np.linspace(self.RoadStart[1], self.RoadEnd[1], self.Midline_Pts)
-        
-        midline = np.column_stack((midline_x, midline_z))
-            
-        return midline
-
-    def ToggleVisibility(self, visible = viz.ON):
-        """switches straights off or on"""
-
-        if self.RoadWidth == 0:
-            self.MidlineEdge.visible(visible)
-        else:
-            self.InsideEdge.visible(visible)
-            self.OutsideEdge.visible(visible)
-
-    
-    def setAlpha(self, alpha = 1):
-        
-        if self.RoadWidth == 0:
-            self.MidlineEdge.alpha(alpha)
-        else:
-            self.InsideEdge.alpha(alpha)
-            self.OutsideEdge.alpha(alpha)

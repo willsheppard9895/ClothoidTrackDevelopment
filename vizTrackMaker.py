@@ -201,18 +201,17 @@ class vizBend():
 class vizStraight():
 
 
-    def __init__(self, bearing, startpos, length = 50, size = 500, z_dir = 1, colour = viz.WHITE, primitive = viz.QUAD_STRIP, primitive_width=None, road_width = 3.0, texturefile = None, midline_step_size = .005):
+    def __init__(self, startpos, length = 50, size = 500, z_dir = 1, colour = viz.WHITE, primitive = viz.QUAD_STRIP, primitive_width=None, road_width = 3.0, texturefile = None, midline_step_size = .005):
         """ultimately this class should inherit a super class called road section. But for now let's just make a straight"""
 
         """returns a straight, given some starting coords and length"""
-
-        self.RoadLength = length   
         
-        self.Bearing = bearing
+        print('Creating vizStraight')
+        
+        self.RoadLength = length                
 
         self.RoadStart = startpos #2 dimensional x, z array.
-        self.RoadEnd = [(startpos[0]+(self.RoadLength * (np.sin(self.Bearing)))), (startpos[1]+(self.RoadLength*(np.cos(self.Bearing))))]#2dim xz array
-        
+        self.RoadEnd = [startpos[0],startpos[1]+(length*z_dir)] #currently only if it's north or south orientation. #2dim xz array
         self.midline_step_size = midline_step_size        
         
         self.Midline_Pts = int(round(self.RoadLength / self.midline_step_size))
@@ -225,7 +224,6 @@ class vizStraight():
             self.HalfRoadWidth = road_width/2.0		
 
         self.Z_direction = z_dir #[1, -1] 
-        
         self.colour = colour
         self.primitive = primitive
         self.primitive_width = primitive_width
@@ -239,7 +237,7 @@ class vizStraight():
                 self.primitive_width = 2
                 viz.linewidth(self.primitive_width)
                 primitive_width = 0 #so I can use the same code below for both primitive types.	
-        
+                
         if self.RoadWidth == 0:
             self.MidlineEdge = self.StraightEdgeMaker([self.RoadStart[0],ABOVEGROUND,self.RoadStart[1]], [self.RoadEnd[0],ABOVEGROUND,self.RoadEnd[1]], primitive_width)
             self.InsideEdge = None
@@ -290,13 +288,10 @@ class vizStraight():
                 
         viz.vertex([startpos[0]-primitive_width, startpos[1], startpos[2]])        
         viz.vertexcolor(self.colour)
-        
         viz.vertex([startpos[0]+primitive_width, startpos[1], startpos[2]])
         viz.vertexcolor(self.colour)
-        
         viz.vertex([endpos[0]-primitive_width, endpos[1], endpos[2]])
         viz.vertexcolor(self.colour)
-        
         viz.vertex([endpos[0]+primitive_width, endpos[1], endpos[2]])		
         viz.vertexcolor(self.colour)
 

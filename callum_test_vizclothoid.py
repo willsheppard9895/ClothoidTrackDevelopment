@@ -1,20 +1,19 @@
-import sys
+#import sys
 
-rootpath = 'C:\\VENLAB data\\ClothoidTrackDevelopment'
-sys.path.append(rootpath)
+#rootpath = 'C:\\VENLAB data\\ClothoidTrackDevelopment'
+#sys.path.append(rootpath)
 
 import viz
 import vizmat
 import clothoid_curve as cc
 import numpy as np
 import matplotlib.pyplot as plt
-from vizTrackMaker import vizStraight
-from StraightMaker import vizStraightBearing
+import StraightMaker as sm
 
 
 viz.go()
 
-viz.MainView.setPosition([-35,130,60])
+viz.MainView.setPosition([0,300,0])
 viz.MainView.setEuler([0,90,0])
 
 def setStage():
@@ -108,6 +107,7 @@ class vizClothoid():
 		self.RoadEnd = self.Midline[-1,:]
 		
 		
+		
 	def BendMaker(self, t, yawrate, transition_duration, rw, speed, sp, x_dir):
 		"""function returns a bend edge"""
 		"""function returns a bend edge"""
@@ -172,13 +172,14 @@ setStage()
 
 #### MAKE FIRST STRAIGHT OBJECT ####
 L = 16#2sec.
-Straight1 = vizStraight( 
-	startpos = [0,0], primitive_width=1.5, road_width = 0, length = L, colour = viz.RED)
-Straight1.ToggleVisibility(viz.ON)
-Straight1.setAlpha(1)
+Straight = sm.vizStraight(
+	startpos = [0,0], primitive_width=1.5, road_width = 0, length = L, colour = viz.RED
+	)
+Straight.ToggleVisibility(viz.ON)
+Straight.setAlpha(1)
 
 ## make clothoid
-sp = Straight1.RoadEnd
+sp = Straight.RoadEnd
 v = 8
 tr = 4 #seconds
 cornering = 4 # seconds
@@ -187,7 +188,7 @@ time_step = np.linspace(0, total, 1000) # ~1 ms steps
 #yawrates = np.radians(np.linspace(6, 20, 3)) # 3 conditions of constant curvature yawrates
 yr = np.radians(13)
 
-clothoid = vizClothoid(start_pos = sp, t = time_step,  speed = v, yawrate = yr, transition = tr, x_dir = -1
+clothoid = vizClothoid(start_pos = sp, t = time_step,  speed = v, yawrate = yr, transition = tr, x_dir = 1
 	)
 clothoid.setAlpha(alpha = .5)
 
@@ -195,17 +196,12 @@ print('bearing', clothoid.Bearing[-1])
 print('road end x', clothoid.RoadEnd[0])
 print('road end z', clothoid.RoadEnd[1])
 
-#print('stright end x', clothoid.RoadEnd[0]+(L*(np.sin(clothoid.Bearing[-1]))))
-#print('stright end z', clothoid.RoadEnd[1]+(L*(np.cos(clothoid.Bearing[-1]))))
-
-#print('stright end x', clothoid.RoadEnd[0]+(L*(np.sin(0))))
-#print('stright end z', clothoid.RoadEnd[1]+(L*(np.cos(0))))
 
 #### MAKE SECOND STRAIGHT OBJECT ####
 ## must match direction to clothoid.bearing[-1]
 
 
-Straight2 = vizStraightBearing(bearing = clothoid.Bearing[-1],
+SB = sm.vizStraightBearing(bearing = clothoid.Bearing[-1],
 	startpos = clothoid.RoadEnd, primitive_width=1.5, road_width = 3, length = L, colour = viz.RED)
-Straight.ToggleVisibility(viz.ON)
-Straight.setAlpha(1)
+SB.ToggleVisibility(viz.ON)
+SB.setAlpha(1)
