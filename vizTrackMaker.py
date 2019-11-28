@@ -2,6 +2,7 @@
 
 import numpy as np
 import viz
+import clothoid_curve as cc
 
 """TODO: 
 
@@ -211,7 +212,6 @@ class vizStraight():
 
         self.RoadStart = startpos #2 dimensional x, z array.
         self.RoadEnd = [(startpos[0]+(self.RoadLength * (np.sin(self.Bearing)))), (startpos[1]+(self.RoadLength*(np.cos(self.Bearing))))]#2dim xz array
-        print(self.RoadEnd)
         
         self.midline_step_size = midline_step_size        
         
@@ -241,7 +241,7 @@ class vizStraight():
                 primitive_width = 0 #so I can use the same code below for both primitive types.	
         
         if self.RoadWidth == 0:
-            self.MidlineEdge = self.StraightEdgeMaker([self.RoadStart[0],ABOVEGROUND,self.RoadStart[1]], [self.RoadEnd[0],ABOVEGROUND,self.RoadEnd[1]], primitive_width, bearing = self.Bearing)
+            self.MidlineEdge = self.StraightEdgeMaker([self.RoadStart[0],ABOVEGROUND,self.RoadStart[1]], [self.RoadEnd[0],ABOVEGROUND,self.RoadEnd[1]], primitive_width)
             self.InsideEdge = None
             self.OutsideEdge = None
         else:
@@ -250,8 +250,8 @@ class vizStraight():
             self.OutsideEdge_Start = [self.RoadStart[0]+self.HalfRoadWidth,ABOVEGROUND, self.RoadStart[1]]
             self.OutsideEdge_End = [self.RoadEnd[0]+self.HalfRoadWidth,ABOVEGROUND, self.RoadEnd[1]]
 
-            self.InsideEdge = self.StraightEdgeMaker(self.InsideEdge_Start, self.InsideEdge_End, primitive_width, bearing = self.Bearing)
-            self.OutsideEdge = self.StraightEdgeMaker(self.OutsideEdge_Start, self.OutsideEdge_End, primitive_width, bearing = self.Bearing)
+            self.InsideEdge = self.StraightEdgeMaker(self.InsideEdge_Start, self.InsideEdge_End, primitive_width)
+            self.OutsideEdge = self.StraightEdgeMaker(self.OutsideEdge_Start, self.OutsideEdge_End, primitive_width)
 
               #make it so both edges have the same center. The setCenter is in local coordinates
             self.InsideEdge.setCenter([-self.HalfRoadWidth, 0, 0])
@@ -260,7 +260,7 @@ class vizStraight():
             self.MidlineEdge = None	
 
         
-        self.midline = self.StraightMidlineMaker(rw = 3, start_pos = [0, 0])
+        self.midline = self.StraightMidlineMaker()
 
                 #ensure all bends start invisible.
         self.ToggleVisibility(viz.OFF)
@@ -279,7 +279,7 @@ class vizStraight():
         pass 
 
 
-    def StraightEdgeMaker(self, startpos, endpos, primitive_width, bearing):
+    def StraightEdgeMaker(self, startpos, endpos, primitive_width):
         """function returns a bend edge"""
         i = 0
         viz.startlayer(self.primitive) 
@@ -287,81 +287,33 @@ class vizStraight():
 
         print ("Startpos: ", startpos)
         print ("Endpos: ", endpos)
-         
                 
-        # start leftside: 
-        start_left = ([
-        (startpos[0] + (primitive_width * (np.sin(bearing - np.pi/2)))), startpos[1], (startpos[2] + (primitive_width * (np.cos(bearing - np.pi/2))))
-        ])
-        print('1L', start_left)
-        viz.vertex(start_left)
-        #viz.vertex([startpos[0]-primitive_width, startpos[1], startpos[2]])        
+        viz.vertex([startpos[0]-primitive_width, startpos[1], startpos[2]])        
         viz.vertexcolor(self.colour)
         
-        # start rightside
-        start_right = ([
-        (startpos[0] + (primitive_width * (np.sin(bearing + np.pi/2)))), startpos[1], (startpos[2] + (primitive_width * (np.cos(bearing + np.pi/2))))
-        ])
-        #viz.vertex([startpos[0]+primitive_width, startpos[1], startpos[2]])
-        print('1R', start_right)
-        viz.vertex(start_right)
+        viz.vertex([startpos[0]+primitive_width, startpos[1], startpos[2]])
         viz.vertexcolor(self.colour)
         
-        # end leftside: 
-        end_left = ([
-        (endpos[0] + (primitive_width * (np.sin(bearing - np.pi/2)))), endpos[1], (endpos[2] + (primitive_width * (np.cos(bearing - np.pi/2))))
-        ])
-        #viz.vertex([endpos[0]-primitive_width, endpos[1], endpos[2]])
-        print('2L', end_left)
-        viz.vertex(end_left)
+        viz.vertex([endpos[0]-primitive_width, endpos[1], endpos[2]])
         viz.vertexcolor(self.colour)
         
-        # end rightside: 
-        end_right = ([
-        (endpos[0] + (primitive_width * (np.sin(bearing + np.pi/2)))), endpos[1], (endpos[2] + (primitive_width * (np.cos(bearing + np.pi/2))))
-        ])
-        #viz.vertex([endpos[0]+primitive_width, endpos[1], endpos[2]])		
-        print('2R', end_right)
-        viz.vertex(end_right)
+        viz.vertex([endpos[0]+primitive_width, endpos[1], endpos[2]])		
         viz.vertexcolor(self.colour)
 
         straightedge = viz.endlayer()
 
         return (straightedge)
     
-    """def add_edge(x, z, rw, sp = [0, 0]):
-         creates a s column array for x, y coords of the edges. sp = start position of the road
-        
-        g = np.gradient([x,z], axis = 1)
-        angles = np.arctan2(g[1], g[0])
-        #print(angles.shape)
-
-        #rotate point of on x,z graph using angles.
-        
-        angles = angles + np.pi/2.0 #perpendicular normal. rotate counterclockwise
-        
-        unit_normals = np.array([np.cos(angles), np.sin(angles)]) #on unit circle
-        unit_normals *= rw
-        
-        xl, zl = ((x + unit_normals[0]) + sp[0]), ((z  + unit_normals[1]) + sp[1])
-
-        return([xl, zl])"""
-    
-    def StraightMidlineMaker(self, rw, start_pos):
+    def StraightMidlineMaker(self):
         """returns midline"""
         #make midline        
             
         midline_x = np.linspace(self.RoadStart[0], self.RoadEnd[0], self.Midline_Pts)
         midline_z = np.linspace(self.RoadStart[1], self.RoadEnd[1], self.Midline_Pts)
-     
-        midline = np.column_stack((midline_x, midline_z))
-        x = midline[:, 0]
-        z = midline[:, 1]        
         
-        outside = np.array(cc.add_edge(x, z, (rw/2), start_pos))
-        inside = np.array(cc.add_edge(x, z, -(rw/2), start_pos))
+        midline = np.column_stack((midline_x, midline_z))
             
-        return midline, inside, outside
+        return midline
 
     def ToggleVisibility(self, visible = viz.ON):
         """switches straights off or on"""
@@ -380,49 +332,3 @@ class vizStraight():
         else:
             self.InsideEdge.alpha(alpha)
             self.OutsideEdge.alpha(alpha)
-
-
-
-class Bend():
-
-    def __init__(self, startpos, rads, size = 500,  x_dir = 1, z_dir = 1, road_width = 3.0):
-        """Returns a  Bend array with lines for middle and edges"""
-
-        self.RoadStart = startpos
-        self.RoadSize_Pts = size
-        self.RoadWidth = road_width		
-        if self.RoadWidth == 0:
-            self.HalfRoadWidth = 0
-        else:
-            self.HalfRoadWidth = road_width/2.0		
-            self.Rads = rads
-            self.X_direction = x_dir
-
-        if self.X_direction > 0:
-            self.RoadArray = np.linspace(np.pi, 0.0, self.RoadSize_Pts) #right bend
-        else:
-            self.RoadArray = np.linspace(0.0, np.pi, self.RoadSize_Pts)  #left bend
-
-        self.Z_direction = z_dir #[1, -1] 
-
-        self.midline = self.LineMaker(self.Rads)
-        self.OutsideLine = self.LineMaker(self.Rads + self.HalfRoadWidth)
-        self.InsideLine = self.LineMaker(self.Rads - self.HalfRoadWidth)
-
-        translate = self.Rads * self.X_direction
-
-        self.CurveOrigin = np.add(self.RoadStart, [translate,0])
-
-        self.midline[:,0] = np.add(self.midline[:,0], translate)
-        self.OutsideLine[:,0] = np.add(self.OutsideLine[:,0], translate)
-        self.InsideLine[:,0] = np.add(self.InsideLine[:,0], translate)
-
-
-    def LineMaker(self, Rads):
-        """returns a xz array for a line"""
-        #make midline        
-        line = np.zeros((int(self.RoadSize_Pts),2))
-        line[:,0] = Rads*np.cos(self.RoadArray)
-        line[:,1] = self.Z_direction*Rads*np.sin(self.RoadArray)
-
-        return line

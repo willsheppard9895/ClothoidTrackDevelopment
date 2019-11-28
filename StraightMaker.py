@@ -53,7 +53,7 @@ def setStage():
 
 ABOVEGROUND = .01 #distance above ground
 
-class vizStraight():
+class vizStraightBearing():
 
 
     def __init__(self, bearing, startpos, length = 50, size = 500, z_dir = 1, colour = viz.WHITE, primitive = viz.QUAD_STRIP, primitive_width=None, road_width = 3.0, texturefile = None, midline_step_size = .005):
@@ -241,12 +241,12 @@ setStage()
 
 #### MAKE FIRST STRAIGHT OBJECT ####
 L = 16#2sec.
-Straight = vizStraight(
+Straight = vizStraightBearing(
 	bearing = 1, startpos = [0,0], primitive_width=1.5, road_width = 0, length = L, colour = viz.RED)
 Straight.ToggleVisibility(viz.ON)
 Straight.setAlpha(1)
 
-## original vizStraight():
+
 
 class vizStraight():
 

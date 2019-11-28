@@ -1,17 +1,20 @@
-## TO DO - FIGURE OUT WHERE EDGE MAKER NEEDS CALLING!!!
-rootpath = 'C:\\VENLAB data\\ClothTrackDevelopment'
+import sys
+
+rootpath = 'C:\\VENLAB data\\ClothoidTrackDevelopment'
 sys.path.append(rootpath)
 
 import viz
+import vizmat
 import clothoid_curve as cc
 import numpy as np
 import matplotlib.pyplot as plt
 from vizTrackMaker import vizStraight
+from StraightMaker import vizStraightBearing
 
 
 viz.go()
 
-viz.MainView.setPosition([0,300,0])
+viz.MainView.setPosition([-35,130,60])
 viz.MainView.setEuler([0,90,0])
 
 def setStage():
@@ -169,13 +172,13 @@ setStage()
 
 #### MAKE FIRST STRAIGHT OBJECT ####
 L = 16#2sec.
-Straight = vizStraight(bearing = 0, 
+Straight1 = vizStraight( 
 	startpos = [0,0], primitive_width=1.5, road_width = 0, length = L, colour = viz.RED)
-Straight.ToggleVisibility(viz.ON)
-Straight.setAlpha(1)
+Straight1.ToggleVisibility(viz.ON)
+Straight1.setAlpha(1)
 
 ## make clothoid
-sp = Straight.RoadEnd
+sp = Straight1.RoadEnd
 v = 8
 tr = 4 #seconds
 cornering = 4 # seconds
@@ -201,8 +204,8 @@ print('road end z', clothoid.RoadEnd[1])
 #### MAKE SECOND STRAIGHT OBJECT ####
 ## must match direction to clothoid.bearing[-1]
 
-L = 16#2sec.
-Straight = vizStraight(bearing = clothoid.Bearing[-1],
+
+Straight2 = vizStraightBearing(bearing = clothoid.Bearing[-1],
 	startpos = clothoid.RoadEnd, primitive_width=1.5, road_width = 3, length = L, colour = viz.RED)
 Straight.ToggleVisibility(viz.ON)
 Straight.setAlpha(1)
