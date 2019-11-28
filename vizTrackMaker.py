@@ -197,6 +197,121 @@ class vizBend():
         else:
             self.InsideEdge.alpha(alpha)
             self.OutsideEdge.alpha(alpha)
+            
+class vizClothoid():
+	
+	def __init__(
+	self, start_pos, t,  speed, yawrate, transition, x_dir = 1, z_dir = 1,
+	colour = viz.WHITE, primitive = viz.QUAD_STRIP, rw = 3.0, primitive_width = 1.5, texturefile = None
+	):
+		""" returns a semi-transparent bend of given roadwidth and clothoid geometry. """
+		
+		print ("Creating a Clothoid Bend")
+		
+		# def clothoid_curve(ts, v, max_yr, transition_duration):
+		
+		self.StartPos = start_pos
+
+		self.TimeStep = t
+		
+		self.TotalTime = t[-1]
+		
+		self.Speed = speed
+		
+		self.Yawrate = yawrate 
+		
+		self.Transition = transition
+		
+		self.RoadWidth = rw
+		if self.RoadWidth == 0:
+			self.HalfRoadWidth = 0
+		else:
+			self.HalfRoadWidth = rw/2.0	
+					
+		self.xDirection = x_dir
+
+		self.zDirection = z_dir
+
+		self.Colour = colour
+		self.Primitive = primitive
+		self.PrimitiveWidth = primitive_width
+		
+		#here it returns a list of the relevant items. You could just return the bend for testing.
+		bendlist = self.BendMaker(t = self.TimeStep, yawrate = self.Yawrate, transition_duration = self.Transition, rw = self.RoadWidth, speed = self.Speed, sp = self.StartPos, x_dir = self.xDirection)
+		
+		self.Bend, self.Midline, self.InsideEdge, self.OutsideEdge, self.Bearing = bendlist
+		
+		#print('X = ', self.xDirection)
+		#print('Midline', self.Midline[10:13])
+		#print('InsideEdge', self.InsideEdge[10:13])
+		#print('OutsideEdge', self.OutsideEdge[10:13])
+		#print('bearing', self.Bearing[-1])
+		#print('Bend', self.Bend[10:13])
+		
+		
+		self.Bend.visible(viz.ON)
+		
+		#add road end.
+		self.RoadEnd = self.Midline[-1,:]
+		
+	def AddTexture(self):
+		"""function to add texture to the viz.primitive"""
+		
+		pass
+		
+		
+	def BendMaker(self, t, yawrate, transition_duration, rw, speed, sp, x_dir):
+		"""function returns a bend edge"""
+		"""function returns a bend edge"""
+				
+		x, y, bearing = cc.clothoid_curve(t, speed, yawrate, transition_duration)
+		
+		if x_dir < 0:
+			bearing[:] = [(2*(np.pi) - b) for b in bearing[:]]
+				
+		midline = np.array([((x*x_dir) + sp[0]),(y + sp[1])]).T
+		
+
+		outside = np.array(cc.add_edge((x*x_dir), y, (rw/2), sp)).T
+		inside = np.array(cc.add_edge((x*x_dir), y, -(rw/2), sp)).T
+		
+		#print(outside.shape)
+		#print(inside.shape)
+	
+		viz.startlayer(self.Primitive)  	
+		
+		for ins, out in zip(inside, outside):
+			
+			#print(ins)
+			#print(ins.shape)
+			viz.vertex(ins[0], ABOVEGROUND, ins[1])
+			viz.vertexcolor(self.Colour)
+			#print(ins[0], ins[1])
+			viz.vertex(out[0], ABOVEGROUND, out[1])
+			viz.vertexcolor(self.Colour)
+			#print(out[0], out[1])
+			
+
+		Bend = viz.endlayer()
+
+		return ([Bend, midline, inside, outside, bearing])
+		
+	def AddTexture(self):
+		"""function to add texture to the viz.primitive"""
+
+        pass
+
+	def ToggleVisibility(self, visible = viz.ON):
+		"""switches bends off or on"""
+		if self.RoadWidth == 0:
+			self.MidlineEdge.visible(visible)
+		else:
+			self.InsideEdge.visible(visible)
+			self.OutsideEdge.visible(visible)
+			
+	def setAlpha(self, alpha = 1):
+		""" set road opacy """
+		self.Bend.alpha(alpha)
 
 class vizStraight():
 
@@ -327,3 +442,95 @@ class vizStraight():
         else:
             self.InsideEdge.alpha(alpha)
             self.OutsideEdge.alpha(alpha)
+            
+class vizStraightBearing():
+    
+    def __init__(self, startpos, length, bearing = 0, road_width = 3, colour = viz.WHITE, primitive = viz.QUAD_STRIP, primitive_width = 1.5, x_dir = 1, z_dir = 1):
+        """ Creates a straightt section of road given a start position, length, bearing, and road width"""
+        print('Creating vizStraightBearing')
+        
+        self.StartPos = startpos
+        
+        self.Length = length
+        
+        self.Bearing = bearing
+                
+        self.RoadEnd = [(self.StartPos[0]+(self.Length * (np.sin(self.Bearing)))), (self.StartPos[1]+(self.Length*(np.cos(self.Bearing))))]#2dim xz array
+        #print('road end', self.RoadEnd)
+        
+        self.RoadWidth = road_width
+        
+        self.Colour = colour
+        
+        self.Primitive = primitive
+        
+        self.PrimitiveWidth = primitive_width 
+        
+        self.xDirection = x_dir
+        
+        self.zDirection = z_dir
+        
+        straightlist = self.StraightMaker(startpos = self.StartPos, bearing = self.Bearing, length = self.Length, primitive_width = self.PrimitiveWidth)
+        
+        self.Straight, self.RoadEnd = straightlist
+        
+        self.Straight.visible(viz.ON)
+        
+        #print(self.RoadEnd)
+        
+        
+    def StraightMaker(self, startpos, bearing, length, primitive_width):
+        
+        endpos = [(startpos[0] + (length * (np.sin(bearing)))),(startpos[1]+(length*(np.cos(bearing))))]
+        
+        viz.startlayer(self.Primitive) 
+
+
+        #print ("Startpos: ", startpos)
+       # print ("Endpos: ", endpos)
+        
+        start_left = ([
+        (startpos[0] + (primitive_width * (np.sin(bearing - np.pi/2)))), ABOVEGROUND, (startpos[1] + (primitive_width * (np.cos(bearing - np.pi/2))))
+        ])
+        #print('1L', start_left)
+        viz.vertex(start_left)       
+        viz.vertexcolor(self.Colour)
+        
+        # start rightside
+        start_right = ([
+        (startpos[0] + (primitive_width * (np.sin(bearing + np.pi/2)))), ABOVEGROUND, (startpos[1] + (primitive_width * (np.cos(bearing + np.pi/2))))
+        ])
+        #print('1R', start_right)
+        viz.vertex(start_right)
+        viz.vertexcolor(self.Colour)
+        
+        # end leftside: 
+        end_left = ([
+        (endpos[0] + (primitive_width * (np.sin(bearing - np.pi/2)))), ABOVEGROUND, (endpos[1] + (primitive_width * (np.cos(bearing - np.pi/2))))
+        ])
+        #print('2L', end_left)
+        viz.vertex(end_left)
+        viz.vertexcolor(self.Colour)
+        
+        # end rightside: 
+        end_right = ([
+        (endpos[0] + (primitive_width * (np.sin(bearing + np.pi/2)))), ABOVEGROUND, (endpos[1] + (primitive_width * (np.cos(bearing + np.pi/2))))
+        ])
+        #print('2R', end_right)
+        viz.vertex(end_right)
+        viz.vertexcolor(self.Colour)
+
+        straight = viz.endlayer()
+
+        return (straight, endpos)
+            
+    
+    def ToggleVisibility(self, visible = viz.ON):
+        
+        pass
+        
+
+    
+    def setAlpha(self, alpha = 1):
+        
+        self.Straight.alpha(alpha)
