@@ -10,10 +10,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import StraightMaker as sm
 
+#viz.setMultiSample(64)
 
 viz.go()
 
-viz.MainView.setPosition([0,300,0])
+viz.MainView.setPosition([-20,150,15])
 viz.MainView.setEuler([0,90,0])
 
 def setStage():
@@ -93,11 +94,11 @@ class vizClothoid():
 		
 		self.Bend, self.Midline, self.InsideEdge, self.OutsideEdge, self.Bearing = bendlist
 		
-		print('X = ', self.xDirection)
-		print('Midline', self.Midline[10:13])
-		print('InsideEdge', self.InsideEdge[10:13])
-		print('OutsideEdge', self.OutsideEdge[10:13])
-		print('bearing', self.Bearing[-1])
+		#print('X = ', self.xDirection)
+		#print('Midline', self.Midline[10:13])
+		#print('InsideEdge', self.InsideEdge[10:13])
+		#print('OutsideEdge', self.OutsideEdge[10:13])
+		#print('bearing', self.Bearing[-1])
 		#print('Bend', self.Bend[10:13])
 		
 		
@@ -106,6 +107,10 @@ class vizClothoid():
 		#add road end.
 		self.RoadEnd = self.Midline[-1,:]
 		
+	def AddTexture(self):
+		"""function to add texture to the viz.primitive"""
+		
+		pass
 		
 		
 	def BendMaker(self, t, yawrate, transition_duration, rw, speed, sp, x_dir):
@@ -123,8 +128,6 @@ class vizClothoid():
 		outside = np.array(cc.add_edge((x*x_dir), y, (rw/2), sp)).T
 		inside = np.array(cc.add_edge((x*x_dir), y, -(rw/2), sp)).T
 		
-		
-		
 		#print(outside.shape)
 		#print(inside.shape)
 	
@@ -132,12 +135,12 @@ class vizClothoid():
 		
 		for ins, out in zip(inside, outside):
 			
-			print(ins)
-			print(ins.shape)
-			viz.vertex(ins[0], .5, ins[1])
+			#print(ins)
+			#print(ins.shape)
+			viz.vertex(ins[0], ABOVEGROUND, ins[1])
 			viz.vertexcolor(self.Colour)
 			#print(ins[0], ins[1])
-			viz.vertex(out[0], .5, out[1])
+			viz.vertex(out[0], ABOVEGROUND, out[1])
 			viz.vertexcolor(self.Colour)
 			#print(out[0], out[1])
 			
@@ -160,12 +163,9 @@ class vizClothoid():
 			self.OutsideEdge.visible(visible)
 			
 	def setAlpha(self, alpha = 1):
+		""" set road opacy """
 		self.Bend.alpha(alpha)
-		"""if self.RoadWidth == 0:
-			self.MidlineEdge.alpha(alpha)
-		else:
-			self.InsideEdge.alpha(alpha)
-			self.OutsideEdge.alpha(alpha)"""
+		
 
 			
 setStage()
@@ -176,7 +176,7 @@ Straight = sm.vizStraight(
 	startpos = [0,0], primitive_width=1.5, road_width = 0, length = L, colour = viz.RED
 	)
 Straight.ToggleVisibility(viz.ON)
-Straight.setAlpha(1)
+Straight.setAlpha(.5)
 
 ## make clothoid
 sp = Straight.RoadEnd
@@ -186,22 +186,21 @@ cornering = 4 # seconds
 total = 2*tr + cornering #12 s
 time_step = np.linspace(0, total, 1000) # ~1 ms steps
 #yawrates = np.radians(np.linspace(6, 20, 3)) # 3 conditions of constant curvature yawrates
-yr = np.radians(13)
+yr = np.radians(20)
 
-clothoid = vizClothoid(start_pos = sp, t = time_step,  speed = v, yawrate = yr, transition = tr, x_dir = 1
+clothoid = vizClothoid(start_pos = sp, t = time_step,  speed = v, yawrate = yr, transition = tr, x_dir = -1
 	)
 clothoid.setAlpha(alpha = .5)
 
-print('bearing', clothoid.Bearing[-1])
-print('road end x', clothoid.RoadEnd[0])
-print('road end z', clothoid.RoadEnd[1])
+#print('bearing', clothoid.Bearing[-1])
+#print('road end x', clothoid.RoadEnd[0])
+#print('road end z', clothoid.RoadEnd[1])
 
 
 #### MAKE SECOND STRAIGHT OBJECT ####
 ## must match direction to clothoid.bearing[-1]
 
 
-SB = sm.vizStraightBearing(bearing = clothoid.Bearing[-1],
-	startpos = clothoid.RoadEnd, primitive_width=1.5, road_width = 3, length = L, colour = viz.RED)
+SB = sm.vizStraightBearing(bearing = clothoid.Bearing[-1], startpos = clothoid.RoadEnd, primitive_width=1.5, road_width = 3, length = L, colour = viz.RED)
 SB.ToggleVisibility(viz.ON)
-SB.setAlpha(1)
+SB.setAlpha(.5)
