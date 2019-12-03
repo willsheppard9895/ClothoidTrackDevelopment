@@ -117,7 +117,14 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 	trialtime = 6
 	wait_texture = setStage('dusk.png')	
 	wait_col = list(np.mean(np.array([viz.BLACK,viz.SKYBLUE]).T, axis = 1))	
+	
 		
+	#add audio files
+	manual_audio = 'C:\\VENLAB data\\shared_modules\\textures\\490_200ms.wav'
+	viz.playSound(manual_audio, viz.SOUND_PRELOAD)	
+	def SingleBeep():
+		"""play single beep"""
+		viz.playSound(manual_audio)
 	"""
 	datacolumns = ('autofile_i','bend','maxyr',
 	'onsettime','ppid','trialn','block','timestamp_exp','timestamp_trial',
@@ -142,7 +149,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 				#read the corresponding entry on the playback_data
 				if trialtimer <= onset:
 					i, auto_row = next(playback_iter)
-					print(i, auto_row)
+					#print(i, auto_row)
 					dir = auto_row.bend							
 					new_swa = auto_row.swa * dir * bend
 					new_yr = auto_row.yr * dir * bend
@@ -154,10 +161,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 					new_yr = 0 #off-tangent failure
 			
 			else:
-				new_yr = None
-			
-			
-			
+				new_yr = None					
 			
 			#update position
 			updatevals = driver.UpdateView(new_yr) 
@@ -236,7 +240,36 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 		UPDATE = True
 		
 		#run trial
-		yield viztask.waitTime(trialtime)
+		def PlaybackReached():
+			"""checks for playback limit or whether automation has been disengaged"""
+			end = False
+			print(viz.tick() - trialstart)
+			if (viz.tick() - trialstart) > trialtime: end = True
+			return(end)
+		
+		def CheckDisengage():
+			"""checks automation status of driver class """
+			end = False
+			auto = driver.getAutomation()
+			if auto == False:end = True				
+			return (end)
+
+		#create viztask functions.
+		waitPlayback = viztask.waitTrue( PlaybackReached )
+		waitDisengage = viztask.waitTrue( CheckDisengage )
+		
+		d = yield viztask.waitAny( [ waitPlayback, waitDisengage ] )		
+
+		if d.condition is waitPlayback:
+			print ('end of trial reached')
+		elif d.condition is waitDisengage:
+			print ('Automation Disengaged')
+			AUTOFLAG = False				
+			wheel.FF_on(.2)				
+			SingleBeep()
+			yield viztask.waitTime(trialtime - (viz.tick()-trialstart))
+			
+		#END OF STEERING TASK
 		
 		#reset trial
 		track.ToggleVisibility(0)
