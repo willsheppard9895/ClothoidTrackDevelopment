@@ -30,7 +30,7 @@ class ConditionList:
 		## tile this by the 3 tracks
 		#print('Condition list Onset', ConditionList_Onset)
 		
-		max_yr_list = np.repeat(self.max_YR, len(ConditionList_Onset))
+		max_yr_list = np.repeat(self.max_YR, len(ConditionList_Onset)) # track
 		#print('len max_yrlist', len(max_yr_list))
 		#print(max_yr_list)
 		ConditionList_Onset_full = np.tile(ConditionList_Onset, len(self.max_YR))
@@ -39,8 +39,8 @@ class ConditionList:
 		#### sort order of the day/night conditions 
 		DN = [-2, -1, 1, 2]
 		#print(D_N)
-		DN_2 = np.repeat(DN, 2)
-		DN_list = np.tile(DN_2, (len(max_yr_list)/8))
+		DN_2 = np.repeat(DN, self.repetitions)
+		DN_list = np.tile(DN_2, len(max_yr_list)/len(DN_2))
 		
 		#print(DN_list)
 		
@@ -52,7 +52,7 @@ class ConditionList:
 		#print(yaw_list)
 		
 		## define number of trials in the condition list
-		trials = len(yaw_list)
+		#trials = len(yaw_list)
 		#print('no. trials =', trials)
 		#print(yaw_list)
 			
@@ -65,23 +65,31 @@ class ConditionList:
 		
 		## relabel day/night and direction columns
 		# Day/Night - +ve values are day
-		# Bend - 1 = Right
+		# Bend: 1 = Right
 
-		yaw_list['Day/Night'] = yaw_list['Day/Night'].map({2 : 1, 1 : 1, -1 : -1, -2 : -1})
+		yaw_list['Day/Night'] = yaw_list['Day/Night'].map({2 : 'D', 1 : 'D', -1 : 'N', -2 : 'N'})
 		
 		#print(yaw_list)
 			
 		## randomly order condition_list and drop index
 		condition_list = yaw_list.sample(frac=1).reset_index(drop=True)
 		#print(condition_list)
-
+		trialn = np.linspace(1, len(condition_list), num = len(condition_list))
+		#print(trialn)
+		
+		condition_list['TrialN'] = trialn
+		
 		return(condition_list)
 
-#yawrates = np.linspace(6, 20, 3)
-#onsets_list = [1.5, 5, 8, 11]
-		
-#CL = ConditionList(yawrates, onsets_list)
 
-#CONDITIONLIST = CL.GenerateConditionList()
+if __name__ == '__main__':
 
-#print(CL.GenerateConditionList())
+	yawrates = np.linspace(6, 20, 3)
+	onsets_list = [1.5, 5, 8, 11]#
+			
+	CL = ConditionList(yawrates, onsets_list)
+
+	CONDITIONLIST = CL.GenerateConditionList()
+
+	print(CONDITIONLIST)
+

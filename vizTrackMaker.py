@@ -202,8 +202,8 @@ class vizClothoid():
 	
 	def __init__(
 	self, start_pos, t,  speed, yawrate, transition, x_dir = 1, z_dir = 1,
-	colour = viz.WHITE, primitive = viz.QUAD_STRIP, rw = 3.0, primitive_width = 1.5, texturefile = None
-	):
+	colour = viz.WHITE, primitive = viz.QUAD_STRIP, rw = 3.0, primitive_width = 1.5, texturefile = None,
+	ABOVEGROUND = .01):
 		""" returns a semi-transparent bend of given roadwidth and clothoid geometry. """
 		
 		print ("Creating a Clothoid Bend")
@@ -303,11 +303,7 @@ class vizClothoid():
 
 	def ToggleVisibility(self, visible = viz.ON):
 		"""switches bends off or on"""
-		if self.RoadWidth == 0:
-			self.MidlineEdge.visible(visible)
-		else:
-			self.InsideEdge.visible(visible)
-			self.OutsideEdge.visible(visible)
+		self.Bend.visible(visible)
 			
 	def setAlpha(self, alpha = 1):
 		""" set road opacy """
@@ -527,7 +523,7 @@ class vizStraightBearing():
     
     def ToggleVisibility(self, visible = viz.ON):
         
-        pass
+        self.Straight.visible(visible)
         
 
     
