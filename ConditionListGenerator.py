@@ -28,7 +28,7 @@ class ConditionList:
 		
 		ConditionList_Onset = np.tile(self.FACTOR_onset, self.repetitions)
 		## tile this by the 3 tracks
-		#print('Condition list Onset', ConditionList_Onset)
+		print('Condition list Onset', ConditionList_Onset)
 		
 		max_yr_list = np.repeat(self.max_YR, len(ConditionList_Onset)) # track
 		#print('len max_yrlist', len(max_yr_list))
@@ -37,14 +37,13 @@ class ConditionList:
 		
 		
 		#### sort order of the day/night conditions 
-		DN = [-2, -1, 1, 2]
-		#print(D_N)
-		DN_2 = np.repeat(DN, self.repetitions)
-		DN_list = np.tile(DN_2, len(max_yr_list)/len(DN_2))
-		
-		#print(DN_list)
-		
-		
+		DN = [1,2]
+		dn_per_onset = np.repeat(DN, len(self.FACTOR_onset))
+		n = int(len(self.FACTOR_onset)/2)		
+		lr = np.concatenate([np.tile([-1,1], n),np.tile([1,-1], n)]) 
+		dn_per_onset = dn_per_onset * lr		
+		DN_list = np.tile(dn_per_onset, len(max_yr_list)/len(dn_per_onset))
+			
 		data = np.transpose([ConditionList_Onset_full, max_yr_list, DN_list])
 		yaw_list = pd.DataFrame(data, columns = ['OnsetTime','maxYR', 'Day/Night'])
 		
@@ -85,7 +84,7 @@ class ConditionList:
 if __name__ == '__main__':
 
 	yawrates = np.linspace(6, 20, 3)
-	onsets_list = [1.5, 5, 8, 11]#
+	onsets_list = [1.5, 5, 8, 11, 15, 17]#
 			
 	CL = ConditionList(yawrates, onsets_list)
 
