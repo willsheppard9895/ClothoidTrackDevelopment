@@ -1,6 +1,7 @@
 ﻿### NEED TO ADD TOGGLE VISIBILITY
 
 import viz
+import viztask
 import numpy as np
 import matplotlib.pyplot as plt
 import vizTrackMaker as tm
@@ -8,18 +9,12 @@ from ConditionListGenerator import ConditionList
 
 #viz.setMultiSample(64)
 
-viz.go()
-
-viz.MainView.setPosition([-20,150,15])
-viz.MainView.setEuler([0,90,0])
-
-def setStage():
+def setStage(fName = 'strong_edge.bmp'):
 	
 	"""Creates grass textured groundplane"""
 	
 	###should set this hope so it builds new tiles if you are reaching the boundary.
-	#fName = 'C:/VENLAB data/shared_modules/textures/strong_edge.bmp'
-	fName = 'strong_edge.bmp'
+	#fName = 'C:/VENLAB data/shared_modules/textures/strong_edge.bmp'	
 	
 	# add groundplane (wrap mode)
 	groundtexture = viz.addTexture(fName)
@@ -39,63 +34,115 @@ def setStage():
 	matrix.setScale( planesize, planesize, planesize )
 	groundplane.texmat( matrix )
 	groundplane.texture(groundtexture)
-	groundplane.visible(1)	
-	
-	viz.clearcolor(viz.SKYBLUE)
-	
+	groundplane.visible(0)	
+			
 	return groundplane
 
-yawrates = np.linspace(6, 20, 3)
-onsets_list = [1.5, 5, 8, 11]
+
+class Track():
+	
+	def __init__(self, maxYR = 25, x_dir = -1, alpha = 1):
+				
+		#set parameters
+		v = 8
+		L = (2*v) #2sec.
+		tr = 4 #seconds
+		cornering = 4 # seconds
+		total = 2*tr + cornering #12 s
+		time_step = np.linspace(0, total, 1000) # ~1 ms steps
+		yr = np.radians(maxYR) #26.232
 		
-CL = ConditionList(yawrates, onsets_list)
+		#build track
+		straight1 = tm.vizStraight(startpos = [0,0], primitive_width=1.5, road_width = 0, length = L, colour = viz.RED)		
+		clothoid = tm.vizClothoid(start_pos = straight1.RoadEnd, t = time_step,  speed = v, yawrate = yr, transition = tr, x_dir = x_dir)
+		straight2 = tm.vizStraightBearing(bearing = clothoid.Bearing[-1], startpos = clothoid.RoadEnd, primitive_width=1.5, road_width = 3, length = L, colour = viz.RED)
+		
+		self.components = [straight1, clothoid, straight2]
+		
+		self.setAlpha(alpha)
+		self.ToggleVisibility(viz.OFF)
+		
+	def ToggleVisibility(self, visible = viz.ON):		
+		for c in self.components: c.ToggleVisibility(visible)
+		
+	def setAlpha(self, alpha= 1):		
+		for c in self.components: c.setAlpha(alpha)
+		
 
-CONDITIONLIST = CL.GenerateConditionList()
+def run(CL, tracks, grounds, backgrounds):
+		
+	print(CL)	
+	
+	for idx, trial in CL.iterrows():
+		
+		#get unique key
+		bend = int(trial['Bend'])
+		yr = trial['maxYR']
+		dn = trial['Day/Night']
+		key = str(bend)+'_'+str(yr)+'_' + dn
+		
+		#pick track and make visible
+		track = tracks[key]
+		track.ToggleVisibility(1)
+		
+		ground = grounds[dn]
+		ground.visible(viz.ON)
+		
+		viz.clearcolor(backgrounds[dn])
+		
+		
+		#run trial
+		yield viztask.waitTime(1)
+		
+		#switch track off again
+		track.ToggleVisibility(0)
+		ground.visible(viz.OFF)
+		
+	
+	viz.quit()
+	#viz.MainScene.visible(viz.ON,viz.WORLD)
+	
+	
+if __name__ == '__main__':
+	
+		
+	#initialise display
+	viz.go()
 
-print(CL.GenerateConditionList())
-
-ABOVEGROUND = .01 #distance above ground
-
-setStage()
-
-def MyCurves(self):
-    
-    def __init__(self):
-        
-            viz.EventClass.__init__(self)
-        
-            #### MAKE FIRST STRAIGHT OBJECT ####
-            L = 16#2sec.
-            Straight = tm.vizStraight(
-                startpos = [0,0], primitive_width=1.5, road_width = 0, length = L, colour = viz.RED
-                )
-            Straight.ToggleVisibility(viz.ON)
-            Straight.setAlpha(.5)
-
-            ## make clothoid
-            sp = Straight.RoadEnd
-            v = 8
-            tr = 4 #seconds
-            cornering = 4 # seconds
-            total = 2*tr + cornering #12 s
-            time_step = np.linspace(0, total, 1000) # ~1 ms steps
-            
-            clothoid = tm.vizClothoid(start_pos = sp, t = time_step,  speed = v, yawrate = yr, transition = tr, x_dir = -1)
-            clothoid.setAlpha(alpha = .5)
-
-            #### MAKE SECOND STRAIGHT OBJECT ####
-            ## must match direction to clothoid.bearing[-1]
-            SB = tm.vizStraightBearing(bearing = clothoid.Bearing[-1], startpos = clothoid.RoadEnd, primitive_width=1.5, road_width = 3, length = L, colour = viz.RED)
-            SB.setAlpha(.5)
-
-    def run(self):
-        i = 0
-        for i, trial in CONDITIONLIST.iterrows():
-            yr = np.radians(trial['maxYR'])
-        i += 0
+	viz.MainView.setPosition([0,1.2,0])
+	#viz.MainView.setEuler([0,90,0])
 
 
-        
-Curves = MyCurves()
+	#set up condition list
+	yawrates = np.linspace(6, 20, 3)
+	onsets_list = [1.5, 5, 8, 11]
+			
+	CL = ConditionList(yawrates, onsets_list)
 
-viztask.schedule(Curves.run())
+	CONDITIONLIST = CL.GenerateConditionList()
+
+	tracks = {}	
+	al = {'D':.25,'N':.025}
+	for bend in [1, -1]:
+		for yr in yawrates:		
+			for dn in ['D','N']:
+				track = Track(yr, bend, al[dn])			
+				key = str(bend)+'_'+str(yr)+'_' + dn
+				tracks[key] = track
+				print(tracks)
+		
+	
+	#create textures
+	grounds = {}
+	for dn, f in zip(['D','N'],['day.png','night.png']):
+		 g = setStage(f)
+		 grounds[dn] = g
+	
+	backgrounds = {'D':viz.SKYBLUE, 'N':viz.BLACK}	
+	
+	viztask.schedule( run( CONDITIONLIST, tracks, grounds, backgrounds ))
+		
+
+
+
+	
