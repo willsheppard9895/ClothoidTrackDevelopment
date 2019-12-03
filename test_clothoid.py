@@ -1,5 +1,7 @@
-﻿### NEED TO ADD TOGGLE VISIBILITY
-
+﻿#add path for wheel automation libs
+rootpath = 'C:\\VENLAB data\\shared_modules\\Logitech_force_feedback'
+import sys
+sys.path.append(rootpath)
 import viz
 import viztask
 import numpy as np
@@ -55,13 +57,13 @@ class Track():
 		cornering = 4 # seconds
 		total = 2*tr + cornering #12 s
 		time_step = np.linspace(0, total, 1000) # ~1 ms steps
-		width = .1
+		width = 1.5
 		yr = np.radians(maxYR) #26.232
 		
 		#build track
-		straight1 = tm.vizStraight(startpos = [0,0], primitive_width=width, road_width = 0, length = L, colour = viz.RED)		
+		straight1 = tm.vizStraight(startpos = [0,0], primitive_width=width, road_width = 0, length = L, colour = viz.WHITE)		
 		clothoid = tm.vizClothoid(start_pos = straight1.RoadEnd, t = time_step,  speed = v, yawrate = yr, transition = tr, x_dir = x_dir, rw=width*2)
-		straight2 = tm.vizStraightBearing(bearing = clothoid.Bearing[-1], startpos = clothoid.RoadEnd, primitive_width=width, road_width = 3, length = L, colour = viz.RED)
+		straight2 = tm.vizStraightBearing(bearing = clothoid.Bearing[-1], startpos = clothoid.RoadEnd, primitive_width=width, road_width = 3, length = L*60, colour = viz.WHITE)
 		
 		self.components = [straight1, clothoid, straight2]
 		self.trialtime = total + (straights*2)
@@ -96,7 +98,13 @@ def SaveData(data = None, filename = None):
 	df.to_csv(complete_path) #save to file.
 	
 
-def run(CL, tracks, grounds, backgrounds, cave, driver):
+def CloseConnections(wheel):
+	
+	wheel.thread_kill()
+	wheel.shutdown()
+	viz.quit()
+
+def run(CL, tracks, grounds, backgrounds, cave, driver, wheel):
 	
 	trialtime = tracks[list(tracks.keys())[0]].trialtime
 	wait_texture = setStage('dusk.png')	
@@ -190,7 +198,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver):
 		SaveData(OutputFile, fn)
 	
 	
-	viz.quit()
+	CloseConnections(wheel)
 	#viz.MainScene.visible(viz.ON,viz.WORLD)
 
 def LoadCave():
@@ -201,7 +209,7 @@ def LoadCave():
 	caveview = cave.getCaveView()
 	return (caveview)
 
-"""
+
 def LoadAutomationModules():
 
 	#Loads automation modules and initialises automation thread
@@ -218,7 +226,7 @@ def LoadAutomationModules():
 	mywheel.control_on()
 
 	return(mywheel)
-"""
+
 
 	
 if __name__ == '__main__':
@@ -233,15 +241,16 @@ if __name__ == '__main__':
 
 	#set up condition list
 	yawrates = np.linspace(6, 20, 3)
-	onsets_list = [1.5, 5, 8, 11]
+	onsets_list = [1.5, 5, 8, 11, 15, 17]
 			
 	CL = ConditionList(yawrates, onsets_list, repetitions = 1)
 
 	CONDITIONLIST = CL.GenerateConditionList()
-
+	print(CONDITIONLIST)
+	
 	tracks = {}	
-	#al = {'D':.25,'N':.025}
-	al = {'D':1,'N':1}
+	al = {'D':.25,'N':.025}
+	#al = {'D':1,'N':1}
 	for bend in [1, -1]:
 		for yr in yawrates:		
 			for dn in ['D','N']:
@@ -259,12 +268,13 @@ if __name__ == '__main__':
 	
 	backgrounds = {'D':viz.SKYBLUE, 'N':viz.BLACK}	
 	
-	"""	
-	self.wheel = LoadAutomationModule()
-	self.wheel.FF_on(0) # set to zero to turn off force feedback
-	"""
 	
-	viztask.schedule( run( CONDITIONLIST, tracks, grounds, backgrounds, cave, driver ))
+	wheel = LoadAutomationModules()
+	wheel.FF_on(.2) # set to zero to turn off force feedback
+	
+	#viz.callback(viz.EXIT_EVENT,CloseConnections(wheel))
+		
+	viztask.schedule( run( CONDITIONLIST, tracks, grounds, backgrounds, cave, driver, wheel ))
 		
 
 
