@@ -114,6 +114,7 @@ def OpenTrial(filename):
 def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 	
 	trialtime = tracks[list(tracks.keys())[0]].trialtime	
+	trialtime = 6
 	wait_texture = setStage('dusk.png')	
 	wait_col = list(np.mean(np.array([viz.BLACK,viz.SKYBLUE]).T, axis = 1))	
 		
@@ -128,24 +129,29 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 	
 	columns = ('world_x','world_z','world_yaw','swa','yr','timestamp_exp','timestamp_trial','maxyr','bend','dn')	
 	
-	def update(num):
+	def update(num):		
+		
 		
 		if UPDATE:
 			
-			trialtimer = viz.tick() - trialstart
-			dt = viz.elapsed()
+			trialtimer = viz.tick() - trialstart	
+			txtdeets.message(str(onset) +'\n' + str(yr) + '\n' + str(round(trialtimer,2)))
 			
 			if AUTOFLAG:
 				
 				#read the corresponding entry on the playback_data
-				idx, trial = next(playback_iter)
-				print(idx, trial)
-				dir = trial.bend							
-				new_swa = trial.swa * dir * bend
-				new_yr = trial.yr * dir * bend
-				
-				#move the wheel.				
-				wheel.set_position(new_swa)	#set steering wheel to 							
+				if trialtimer <= onset:
+					i, auto_row = next(playback_iter)
+					print(i, auto_row)
+					dir = auto_row.bend							
+					new_swa = auto_row.swa * dir * bend
+					new_yr = auto_row.yr * dir * bend
+					
+					#move the wheel.				
+					wheel.set_position(new_swa)	#set steering wheel to 							
+				else:
+					#driver.setAutomation(False)
+					new_yr = 0 #off-tangent failure
 			
 			else:
 				new_yr = None
@@ -178,7 +184,11 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 	viz.starttimer(0,1.0/60.0,viz.FOREVER)
 	
 		
-	
+	txtdeets = viz.addText("Mode",parent=viz.SCREEN)	
+	#set above skyline so I can easily filter glances to the letter out of the data
+	txtdeets.setPosition(.05,.52)
+	txtdeets.fontSize(36)
+	txtdeets.color(viz.WHITE)
 		
 	print(CL)	
 	
@@ -200,6 +210,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 		bend = int(trial['Bend'])
 		yr = trial['maxYR']
 		dn = trial['Day/Night']
+		onset = trial['OnsetTime']		
 		key = str(bend)+'_'+str(yr)+'_' + dn
 		#retrieve playback
 		playback = autofiles[str(yr)]
@@ -286,7 +297,8 @@ if __name__ == '__main__':
 
 	#set up condition list
 	yawrates = np.linspace(6, 20, 3)
-	onsets_list = [1.5, 5, 8, 11, 15, 17]
+	#onsets_list = [1.5, 5, 8, 11, 15, 17]
+	onsets_list = [1.5, 3,4,5]
 			
 	CL = ConditionList(yawrates, onsets_list, repetitions = 2)
 
