@@ -6,6 +6,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import vizTrackMaker as tm
 from ConditionListGenerator import ConditionList
+import myCave
+import vizdriver_Tuna19 as vizdriver
 
 #viz.setMultiSample(64)
 
@@ -101,17 +103,44 @@ def run(CL, tracks, grounds, backgrounds):
 	
 	viz.quit()
 	#viz.MainScene.visible(viz.ON,viz.WORLD)
+
+def LoadCave():
+	"""loads myCave and returns Caveview"""
+
+	#set EH in myCave
+	cave = myCave.initCave()
+	caveview = cave.getCaveView()
+	return (caveview)
+
+"""
+def LoadAutomationModules():
+
+	#Loads automation modules and initialises automation thread
+
+	import logitech_wheel_threaded
 	
+	handle = viz.window.getHandle()
+	mywheel = logitech_wheel_threaded.steeringWheelThreaded(handle)	
+	mywheel.init() #Initialise the wheel
+	mywheel.start() #Start the wheels thread
+
+	#centre the wheel at start of experiment
+	mywheel.set_position(0) #Set the pd control target
+	mywheel.control_on()
+
+	return(mywheel)
+"""
+
 	
 if __name__ == '__main__':
 	
 		
 	#initialise display
-	viz.go()
+	cave = LoadCave()
 
-	viz.MainView.setPosition([0,1.2,0])
-	#viz.MainView.setEuler([0,90,0])
-
+	#initialise driver
+	driver = vizdriver.Driver(cave)		
+	
 
 	#set up condition list
 	yawrates = np.linspace(6, 20, 3)
