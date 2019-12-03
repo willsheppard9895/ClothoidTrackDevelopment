@@ -71,7 +71,24 @@ class Track():
 		for c in self.components: c.setAlpha(alpha)
 		
 
-def run(CL, tracks, grounds, backgrounds):
+def run(CL, tracks, grounds, backgrounds, cave, driver):
+	
+	wait_texture = setStage('dusk.png')	
+	wait_col = list(np.mean(np.array([viz.BLACK,viz.SKYBLUE]).T, axis = 1))
+	UPDATE = True
+	
+	def update(num):
+		
+		if UPDATE:
+		#update position
+			updatevals = driver.UpdateView() 
+		
+		#record data
+		
+	
+	#call update every frame
+	viz.callback(viz.TIMER_EVENT, update)
+	viz.starttimer(0,1.0/60.0,viz.FOREVER)
 		
 	print(CL)	
 	
@@ -96,10 +113,22 @@ def run(CL, tracks, grounds, backgrounds):
 		#run trial
 		yield viztask.waitTime(1)
 		
-		#switch track off again
+		#reset trial
 		track.ToggleVisibility(0)
 		ground.visible(viz.OFF)
+		driver.reset()
+		wait_texture.visible(1)
+		viz.clearcolor(wait_col)
+		UPDATE = False
 		
+		yield viztask.waitTime(.5)
+		wait_texture.visible(0)
+		UPDATE = True
+		
+	
+	
+		
+	
 	
 	viz.quit()
 	#viz.MainScene.visible(viz.ON,viz.WORLD)
@@ -169,7 +198,7 @@ if __name__ == '__main__':
 	
 	backgrounds = {'D':viz.SKYBLUE, 'N':viz.BLACK}	
 	
-	viztask.schedule( run( CONDITIONLIST, tracks, grounds, backgrounds ))
+	viztask.schedule( run( CONDITIONLIST, tracks, grounds, backgrounds, cave, driver ))
 		
 
 
