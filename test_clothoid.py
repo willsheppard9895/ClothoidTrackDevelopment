@@ -87,8 +87,7 @@ def SaveData(data = None, filename = None):
 	complete_path = file_path + fileext
 	exists = True
 	i = 0
-	while exists:		
-		print("here")
+	while exists:				
 		if os.path.exists(complete_path):
 			i += 1			
 			complete_path = file_path + '_copy_' + str(i) + fileext			
@@ -104,9 +103,17 @@ def CloseConnections(wheel):
 	wheel.shutdown()
 	viz.quit()
 
-def run(CL, tracks, grounds, backgrounds, cave, driver, wheel):
+def OpenTrial(filename):
+	"""opens csv file"""
+
+	filename = filename + '.csv'
+	print ("Loading file: " + filename)
+	playbackdata = pd.read_csv("Data/autofiles/"+filename)
+	return (playbackdata)
+
+def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 	
-	trialtime = tracks[list(tracks.keys())[0]].trialtime
+	trialtime = tracks[list(tracks.keys())[0]].trialtime	
 	wait_texture = setStage('dusk.png')	
 	wait_col = list(np.mean(np.array([viz.BLACK,viz.SKYBLUE]).T, axis = 1))	
 		
@@ -119,22 +126,45 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, wheel):
 	'steeringbias', 'autoflag', 'autofile')
 	"""
 	
-	columns = ('world_x','world_z','world_yaw','swa','timestamp_exp','timestamp_trial','maxyr','bend','dn')	
+	columns = ('world_x','world_z','world_yaw','swa','yr','timestamp_exp','timestamp_trial','maxyr','bend','dn')	
 	
 	def update(num):
 		
 		if UPDATE:
-			#update position
-			updatevals = driver.UpdateView() 
-			#return the values used in position update			
 			
-			#retrieve position and orientation
+			trialtimer = viz.tick() - trialstart
+			dt = viz.elapsed()
+			
+			if AUTOFLAG:
+				
+				#read the corresponding entry on the playback_data
+				idx, trial = next(playback_iter)
+				print(idx, trial)
+				dir = trial.bend							
+				new_swa = trial.swa * dir * bend
+				new_yr = trial.yr * dir * bend
+				
+				#move the wheel.				
+				wheel.set_position(new_swa)	#set steering wheel to 							
+			
+			else:
+				new_yr = None
+			
+			
+			
+			
+			#update position
+			updatevals = driver.UpdateView(new_yr) 
+			#return the values used in position update			
+				
+				
+				#retrieve position and orientation
 			pos = cave.getPosition()							
 			yaw = vizmat.NormAngle(cave.getEuler()[0])			
 						
 			#record data			
-			output = (pos[0], pos[2], yaw, updatevals[4], viz.tick(), viz.tick() - trialstart, yr, bend, dn) #output array
-			
+			output = (pos[0], pos[2], yaw, updatevals[4], updatevals[0], viz.tick(), trialtimer, yr, bend, dn) #output array
+				
 			#print(output)
 		
 			#self.OutputWriter.loc[self.Current_RowIndex,:] = output #this dataframe is actually just one line. 		
@@ -143,15 +173,22 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, wheel):
 	
 	#call update every frame
 	UPDATE = False
+	
 	viz.callback(viz.TIMER_EVENT, update)
 	viz.starttimer(0,1.0/60.0,viz.FOREVER)
+	
+		
+	
 		
 	print(CL)	
 	
 	
 	for idx, trial in CL.iterrows():
 		
+		#reset key trial variables 
 		trialstart = viz.tick()
+		AUTOFLAG = True
+		driver.setAutomation(AUTOFLAG)
 		
 		#set up dataframe and csv writer
 		OutputFile = io.BytesIO()
@@ -164,6 +201,11 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, wheel):
 		yr = trial['maxYR']
 		dn = trial['Day/Night']
 		key = str(bend)+'_'+str(yr)+'_' + dn
+		#retrieve playback
+		playback = autofiles[str(yr)]
+		playback_iter = playback.iterrows()
+		
+		
 		
 		#only switch on update loop after retrieving parameters
 		
@@ -177,6 +219,9 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, wheel):
 		
 		viz.clearcolor(backgrounds[dn])
 		yield viztask.waitTime(.5)
+		
+		
+		#start the trial proper
 		UPDATE = True
 		
 		#run trial
@@ -194,8 +239,8 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, wheel):
 		wait_texture.visible(0)
 		UPDATE = True
 		
-		fn = str(bend)+'_'+str(yr)
-		SaveData(OutputFile, fn)
+		savename = str(idx)
+		SaveData(OutputFile, savename)
 	
 	
 	CloseConnections(wheel)
@@ -243,13 +288,13 @@ if __name__ == '__main__':
 	yawrates = np.linspace(6, 20, 3)
 	onsets_list = [1.5, 5, 8, 11, 15, 17]
 			
-	CL = ConditionList(yawrates, onsets_list, repetitions = 1)
+	CL = ConditionList(yawrates, onsets_list, repetitions = 2)
 
 	CONDITIONLIST = CL.GenerateConditionList()
 	print(CONDITIONLIST)
 	
 	tracks = {}	
-	al = {'D':.25,'N':.025}
+	al = {'D':.25,'N':.025}	
 	#al = {'D':1,'N':1}
 	for bend in [1, -1]:
 		for yr in yawrates:		
@@ -268,13 +313,19 @@ if __name__ == '__main__':
 	
 	backgrounds = {'D':viz.SKYBLUE, 'N':viz.BLACK}	
 	
+	#load playback
+	autofiles = {}
+	for yr in yawrates: 
+		auto_fn = str(yr)
+		playback = OpenTrial(auto_fn)	
+		autofiles[auto_fn] = playback
 	
 	wheel = LoadAutomationModules()
-	wheel.FF_on(.2) # set to zero to turn off force feedback
+	wheel.FF_on(1) # set to zero to turn off force feedback
 	
 	#viz.callback(viz.EXIT_EVENT,CloseConnections(wheel))
 		
-	viztask.schedule( run( CONDITIONLIST, tracks, grounds, backgrounds, cave, driver, wheel ))
+	viztask.schedule( run( CONDITIONLIST, tracks, grounds, backgrounds, cave, driver, autofiles, wheel ))
 		
 
 
