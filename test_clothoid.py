@@ -111,7 +111,7 @@ def OpenTrial(filename):
 	playbackdata = pd.read_csv("Data/autofiles/"+filename)
 	return (playbackdata)
 
-def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
+def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_prefix):
 	
 	DEBUG = True
 	
@@ -287,7 +287,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 		wait_texture.visible(0)
 		UPDATE = True
 		
-		savename = str(idx)
+		savename = save_prefix +'_'+str(idx)+'.csv'
 		SaveData(OutputFile, savename)
 	
 	
@@ -320,6 +320,10 @@ def LoadAutomationModules():
 
 	return(mywheel)
 
+def raiseandquit(warn):
+	
+	print(warn.upper())
+	viz.quit()
 
 	
 if __name__ == '__main__':
@@ -371,10 +375,36 @@ if __name__ == '__main__':
 	
 	wheel = LoadAutomationModules()
 	wheel.FF_on(1) # set to zero to turn off force feedback
-	
 	vizact.onexit(CloseConnections, wheel)
+	
+	pp_id = viz.input('Participant code: ') #add participant code
+	try:
+		pp_id = int(pp_id)
+	except: 
+		raiseandquit("invalid pp code")		
 		
-	viztask.schedule( run( CONDITIONLIST, tracks, grounds, backgrounds, cave, driver, autofiles, wheel ))
+	block = viz.input('Block: ') #add participant code
+	try: 
+		block = int(block)
+		if block not in [1,2,3,4]: raiseandquit("invalid block number")			
+	except:
+		raiseandquit("invalid block number")
+		
+	save_prefix = '_'.join(['Tuna19',str(pp_id),str(block)])
+	print(save_prefix)
+	
+	
+	#put instructions here#
+	viz.message("""
+	\t\tYou will now begin the experiment \n\n The automated vehicle will attempt to navigate a series of bends. 
+	\nYour task as the supervisory driver is to make sure the vehicle stays within the road edges. 
+	\nDuring automation please keep your hands loosely on the wheel. 
+	\nYou may take control by pressing the gear pads. 
+	\nOnce pressed, you will immediately be in control of the vehicle
+	""")
+	
+		
+	viztask.schedule( run( CONDITIONLIST, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_prefix ))
 		
 
 
