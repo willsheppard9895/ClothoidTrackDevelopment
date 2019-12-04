@@ -42,6 +42,12 @@ disengage_rt <- function(onsettime, timestamp_trial, autoflag){
   return(rt)
 }
 
+# filter early disengage
+filtered_steerdata <- steerdata  %>% 
+  group_by(trialid) %>% 
+  summarize(rt = disengage_rt(onsettime, timestamp_trial, autoflag)) %>%
+  filter(rt > 0)
+
 #create factors
 steerdata$ppid <- as.factor(steerdata$ppid)
 steerdata$block <- as.factor(steerdata$block)
