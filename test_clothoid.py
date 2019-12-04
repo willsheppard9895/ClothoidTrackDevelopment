@@ -135,8 +135,17 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_p
 	'distance_frames','dt','wheelcorrection', 
 	'steeringbias', 'autoflag', 'autofile')
 	"""
+	"""
+			UpdateValues = []
+		UpdateValues.append(yawrate)
+		UpdateValues.append(turnangle)
+		UpdateValues.append(distance)
+		UpdateValues.append(dt)
+		UpdateValues.append(SteeringWheelValue)
+		UpdateValues.append(self.__Wheel_yawrate_adjustment)
+	"""
 	
-	columns = ('world_x','world_z','world_yaw','swa','yr','timestamp_exp','timestamp_trial','maxyr','bend','dn')	
+	columns = ('world_x','world_z','world_yaw','timestamp_exp','timestamp_trial','maxyr','bend','dn','autoflag','yr_sec','yr_frames','distance_frames','dt','sw_value','wheelcorrection','sw_angle')	
 	
 	def update(num):		
 		
@@ -153,7 +162,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_p
 					i, auto_row = next(playback_iter)
 					#print(i, auto_row)
 					dir = auto_row.bend							
-					new_swa = auto_row.swa * dir * bend
+					new_swa = auto_row.swa * dir * bend #these columns are named slightly differently to the final experiment data
 					new_yr = auto_row.yr * dir * bend
 					
 					#move the wheel.									
@@ -174,8 +183,9 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_p
 			pos = cave.getPosition()							
 			yaw = vizmat.NormAngle(cave.getEuler()[0])			
 						
-			#record data			
-			output = (pos[0], pos[2], yaw, updatevals[4], updatevals[0], viz.tick(), trialtimer, yr, bend, dn) #output array
+			#record data	
+			#columns = ('world_x','world_z','world_yaw','timestamp_exp','timestamp_trial','maxyr','bend','dn','autoflag','yr_sec','yr_frames','distance_frames','dt','sw_value','wheelcorrection','sw_angle')	
+			output = (pos[0], pos[2], yaw, viz.tick(), trialtimer, yr, bend, dn, int(AUTOFLAG), updatevals[0], updatevals[1],updatevals[2], updatevals[3],updatevals[4],updatevals[5], updatevals[4]*90) #output array			
 				
 			#print(output)
 		
@@ -393,7 +403,7 @@ if __name__ == '__main__':
 	save_prefix = '_'.join(['Tuna19',str(pp_id),str(block)])
 	print(save_prefix)
 	
-	
+	#TODO: check instructions
 	#put instructions here#
 	viz.message("""
 	\t\tYou will now begin the experiment \n\n The automated vehicle will attempt to navigate a series of bends. 
