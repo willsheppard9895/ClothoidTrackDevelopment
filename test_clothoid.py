@@ -3,7 +3,7 @@ rootpath = 'C:\\VENLAB data\\shared_modules\\Logitech_force_feedback'
 import sys
 sys.path.append(rootpath)
 import viz
-import viztask
+import viztask, vizact
 import numpy as np
 import matplotlib.pyplot as plt
 import vizTrackMaker as tm
@@ -113,8 +113,10 @@ def OpenTrial(filename):
 
 def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 	
+	DEBUG = True
+	
 	trialtime = tracks[list(tracks.keys())[0]].trialtime	
-	trialtime = 6
+	if DEBUG: trialtime = 6
 	wait_texture = setStage('dusk.png')	
 	wait_col = list(np.mean(np.array([viz.BLACK,viz.SKYBLUE]).T, axis = 1))	
 	
@@ -142,7 +144,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 		if UPDATE:
 			
 			trialtimer = viz.tick() - trialstart	
-			txtdeets.message(str(onset) +'\n' + str(yr) + '\n' + str(round(trialtimer,2)))
+			if DEBUG: txtmode.message(str(onset) +'\n' + str(yr) + '\n' + str(round(trialtimer,2)))
 			
 			if AUTOFLAG:
 				
@@ -154,7 +156,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 					new_swa = auto_row.swa * dir * bend
 					new_yr = auto_row.yr * dir * bend
 					
-					#move the wheel.				
+					#move the wheel.									
 					wheel.set_position(new_swa)	#set steering wheel to 							
 				else:
 					#driver.setAutomation(False)
@@ -188,15 +190,16 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 	viz.starttimer(0,1.0/60.0,viz.FOREVER)
 	
 		
-	txtdeets = viz.addText("Mode",parent=viz.SCREEN)	
+	txtmode = viz.addText("Mode",parent=viz.SCREEN)	
 	#set above skyline so I can easily filter glances to the letter out of the data
-	txtdeets.setPosition(.05,.52)
-	txtdeets.fontSize(36)
-	txtdeets.color(viz.WHITE)
+	txtmode.setPosition(.05,.52)
+	txtmode.fontSize(36)
+	txtmode.color(viz.WHITE)	
+	
+	if not DEBUG: txtmode.message('M')
 		
 	print(CL)	
-	
-	
+		
 	for idx, trial in CL.iterrows():
 		
 		#reset key trial variables 
@@ -243,7 +246,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 		def PlaybackReached():
 			"""checks for playback limit or whether automation has been disengaged"""
 			end = False
-			print(viz.tick() - trialstart)
+			#print(viz.tick() - trialstart)
 			if (viz.tick() - trialstart) > trialtime: end = True
 			return(end)
 		
@@ -264,6 +267,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel):
 			print ('end of trial reached')
 		elif d.condition is waitDisengage:
 			print ('Automation Disengaged')
+			if not DEBUG: txtmode.message('A')
 			AUTOFLAG = False				
 			wheel.FF_on(.2)				
 			SingleBeep()
@@ -368,7 +372,7 @@ if __name__ == '__main__':
 	wheel = LoadAutomationModules()
 	wheel.FF_on(1) # set to zero to turn off force feedback
 	
-	#viz.callback(viz.EXIT_EVENT,CloseConnections(wheel))
+	vizact.onexit(CloseConnections, wheel)
 		
 	viztask.schedule( run( CONDITIONLIST, tracks, grounds, backgrounds, cave, driver, autofiles, wheel ))
 		
