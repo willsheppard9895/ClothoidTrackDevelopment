@@ -113,10 +113,11 @@ def OpenTrial(filename):
 
 def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_prefix):
 	
-	DEBUG = True
+	DEBUG = False
 	
 	trialtime = tracks[list(tracks.keys())[0]].trialtime	
 	if DEBUG: trialtime = 6
+		
 	wait_texture = setStage('dusk.png')	
 	wait_col = list(np.mean(np.array([viz.BLACK,viz.SKYBLUE]).T, axis = 1))	
 	
@@ -145,7 +146,8 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_p
 		UpdateValues.append(self.__Wheel_yawrate_adjustment)
 	"""
 	
-	columns = ('world_x','world_z','world_yaw','timestamp_exp','timestamp_trial','maxyr','bend','dn','autoflag','yr_sec','yr_frames','distance_frames','dt','sw_value','wheelcorrection','sw_angle')	
+	expid, ppid, block = save_prefix.split('_')
+	columns = ('ppid','block','world_x','world_z','world_yaw','timestamp_exp','timestamp_trial','maxyr', 'onsettime', 'bend','dn','autoflag','yr_sec','yr_frames','distance_frames','dt','sw_value','wheelcorrection','sw_angle')	
 	
 	def update(num):		
 		
@@ -184,8 +186,8 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_p
 			yaw = vizmat.NormAngle(cave.getEuler()[0])			
 						
 			#record data	
-			#columns = ('world_x','world_z','world_yaw','timestamp_exp','timestamp_trial','maxyr','bend','dn','autoflag','yr_sec','yr_frames','distance_frames','dt','sw_value','wheelcorrection','sw_angle')	
-			output = (pos[0], pos[2], yaw, viz.tick(), trialtimer, yr, bend, dn, int(AUTOFLAG), updatevals[0], updatevals[1],updatevals[2], updatevals[3],updatevals[4],updatevals[5], updatevals[4]*90) #output array			
+			#columns = ('ppid', 'block','world_x','world_z','world_yaw','timestamp_exp','timestamp_trial','maxyr', 'onsettime', 'bend','dn','autoflag','yr_sec','yr_frames','distance_frames','dt','sw_value','wheelcorrection','sw_angle')	
+			output = (ppid, block, pos[0], pos[2], yaw, viz.tick(), trialtimer, yr, bend, onset, dn, int(AUTOFLAG), updatevals[0], updatevals[1],updatevals[2], updatevals[3],updatevals[4],updatevals[5], updatevals[4]*90) #output array			
 				
 			#print(output)
 		
@@ -210,7 +212,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_p
 		
 	print(CL)	
 		
-	for idx, trial in CL.iterrows():
+	for trial_i, (idx, trial) in enumerate(CL.iterrows()):
 		
 		#reset key trial variables 
 		trialstart = viz.tick()
@@ -246,7 +248,10 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_p
 		ground.visible(viz.ON)
 		
 		viz.clearcolor(backgrounds[dn])
-		yield viztask.waitTime(.5)
+		if trial_i == 0:
+			yield viztask.waitTime(2)
+		else:
+			yield viztask.waitTime(.5)
 		
 		
 		#start the trial proper
@@ -297,7 +302,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_p
 		wait_texture.visible(0)
 		UPDATE = True
 		
-		savename = save_prefix +'_'+str(idx)+'.csv'
+		savename = save_prefix +'_'+str(trial_i)
 		SaveData(OutputFile, savename)
 	
 	
@@ -348,8 +353,8 @@ if __name__ == '__main__':
 
 	#set up condition list
 	yawrates = np.linspace(6, 20, 3)
-	#onsets_list = [1.5, 5, 8, 11, 15, 17]
-	onsets_list = [1.5, 3,4,5]
+	#onsets_list = [1.5, 3, 4, 5]
+	onsets_list = [1.5, 5, 8, 11, 15, 17]
 			
 	CL = ConditionList(yawrates, onsets_list, repetitions = 2)
 
@@ -393,7 +398,7 @@ if __name__ == '__main__':
 	except: 
 		raiseandquit("invalid pp code")		
 		
-	block = viz.input('Block: ') #add participant code
+	block = viz.input('Block: ') #add block number
 	try: 
 		block = int(block)
 		if block not in [1,2,3,4]: raiseandquit("invalid block number")			
@@ -402,6 +407,14 @@ if __name__ == '__main__':
 		
 	save_prefix = '_'.join(['Tuna19',str(pp_id),str(block)])
 	print(save_prefix)
+	
+	if block == 1:
+		consent_check = viz.input('Has consent been given (Y/N)?: ')
+		try:
+			str(consent_check)
+			if not consent_check == 'Y': raiseandquit("Consent must be gained before proceeding")	
+		except: 
+			raiseandquit("Consent must be gained before proceeding")	
 	
 	#TODO: check instructions
 	#put instructions here#
@@ -412,7 +425,7 @@ if __name__ == '__main__':
 	\nYou may take control by pressing the gear pads. 
 	\nOnce pressed, you will immediately be in control of the vehicle
 	""")
-	
+	viz.mouse.setVisible(viz.OFF) #switch mouse off
 		
 	viztask.schedule( run( CONDITIONLIST, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_prefix ))
 		
