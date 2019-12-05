@@ -187,7 +187,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_p
 						
 			#record data	
 			#columns = ('ppid', 'block','world_x','world_z','world_yaw','timestamp_exp','timestamp_trial','maxyr', 'onsettime', 'bend','dn','autoflag','yr_sec','yr_frames','distance_frames','dt','sw_value','wheelcorrection','sw_angle')	
-			output = (ppid, block, pos[0], pos[2], yaw, viz.tick(), trialtimer, yr, bend, onset, dn, int(AUTOFLAG), updatevals[0], updatevals[1],updatevals[2], updatevals[3],updatevals[4],updatevals[5], updatevals[4]*90) #output array			
+			output = (ppid, block, pos[0], pos[2], yaw, viz.tick(), trialtimer, yr, onset, bend, dn, int(AUTOFLAG), updatevals[0], updatevals[1],updatevals[2], updatevals[3],updatevals[4],updatevals[5], updatevals[4]*90) #output array			
 				
 			#print(output)
 		
