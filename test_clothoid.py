@@ -355,7 +355,7 @@ if __name__ == '__main__':
 	#set up condition list
 	yawrates = np.linspace(6, 20, 3)
 	#onsets_list = [1.5, 3, 4, 5]
-	onsets_list = [1.5, 5, 8, 11, 15, 17]
+	onsets_list = [1.5, 5, 8, 11, 17, 17]
 			
 	CL = ConditionList(yawrates, onsets_list, repetitions = 2)
 

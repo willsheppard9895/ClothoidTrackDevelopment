@@ -15,7 +15,7 @@ library("tidyverse")
 setwd("C:/VENLAb data/ClothoidTrackDevelopment/Data")
 
 #read .csv
-steerdata = read_csv("collated_steering.csv")
+steerdata = read_csv("collated_steering.csv", col_names = TRUE)
 
 #sTEErING HEADErs: 
 #columns = ('ppid', 'block','world_x','world_z','world_yaw',
@@ -33,7 +33,7 @@ steerdata <- steerdata %>%
                                   onsettime == 5 ~ "Cloth1",
                                   onsettime == 8 ~ "Apex",
                                   onsettime == 11 ~ "Cloth2",
-                                  onsettime %in% c(15, 17) ~ "Straight2" 
+                                  onsettime == 17 ~ "NoFail" 
   ))
 
 # Create a  trial id
@@ -61,7 +61,7 @@ steerdata$failurepoint <- as.factor(steerdata$failurepoint)
 
 # create trial counts per condition and create trial averages
 steerdata_trialavgs <- steerdata  %>% 
-  group_by(ppid, block, maxyr, failurepoint, trialid) %>% 
+  group_by(ppid, block, maxyr, failurepoint) %>% 
   summarize(rt = disengage_rt(onsettime, timestamp_trial, autoflag),
             onsettime = first(onsettime),
             swa_var = sd(sw_angle),
@@ -74,9 +74,9 @@ steerdata_trialavgs <- steerdata  %>%
             )
 
 #calculate grand means of the main measures for failure conditions
-grandmeans <- steerdata_trialavgs %>% 
+conditionavgs <- steerdata_trialavgs %>% 
   ungroup() %>% 
-  filter(rt > 0) %>% 
+  filter(rt > 0 | is.na(rt)) %>% 
   group_by(maxyr, failurepoint) %>%
   summarise(onsettime = first(onsettime),
             mn_rt = mean(rt, na.rm= T),
@@ -96,6 +96,6 @@ grandmeans <- steerdata_trialavgs %>%
             perc_takeover = sum(disengaged)/n()
             )
 
-write.csv(steerdata_trialavgs,"C:/VENLAB data/ClothoidTrackDevelopment/4Students/steerdata_trialavgs.csv", row.names = FALSE)
-write.csv(grandmeans,"C:/VENLAB data/ClothoidTrackDevelopment/4Students/grandmeans.csv", row.names = FALSE)
+write.csv(steerdata_trialavgs,"C:/VENLAB data/ClothoidTrackDevelopment/4Students/trialavgs.csv", row.names = FALSE)
+write.csv(conditionavgs,"C:/VENLAB data/ClothoidTrackDevelopment/4Students/conditionavgs.csv", row.names = FALSE)
 
