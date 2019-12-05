@@ -207,8 +207,8 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_p
 	txtmode.setPosition(.05,.52)
 	txtmode.fontSize(36)
 	txtmode.color(viz.WHITE)	
-	
-	if not DEBUG: txtmode.message('M')
+
+	if not DEBUG: txtmode.message('A')
 		
 	print(CL)	
 		
@@ -224,8 +224,6 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_p
 		OutputWriter = csv.writer(OutputFile)
 		OutputWriter.writerow(columns) #write headers.
 		
-		
-		#get unique key
 		bend = int(trial['Bend'])
 		yr = trial['maxYR']
 		dn = trial['Day/Night']
@@ -280,9 +278,11 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_p
 
 		if d.condition is waitPlayback:
 			print ('end of trial reached')
+			
 		elif d.condition is waitDisengage:
 			print ('Automation Disengaged')
-			if not DEBUG: txtmode.message('A')
+			if not DEBUG: txtmode.message('M')
+			
 			AUTOFLAG = False				
 			wheel.FF_on(.2)				
 			SingleBeep()
@@ -297,6 +297,7 @@ def run(CL, tracks, grounds, backgrounds, cave, driver, autofiles, wheel, save_p
 		wait_texture.visible(1)
 		viz.clearcolor(wait_col)
 		UPDATE = False
+		if not DEBUG: txtmode.message('A')
 		
 		yield viztask.waitTime(.5)
 		wait_texture.visible(0)
@@ -392,6 +393,7 @@ if __name__ == '__main__':
 	wheel.FF_on(1) # set to zero to turn off force feedback
 	vizact.onexit(CloseConnections, wheel)
 	
+	## add participant interaction
 	pp_id = viz.input('Participant code: ') #add participant code
 	try:
 		pp_id = int(pp_id)
