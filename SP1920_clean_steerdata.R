@@ -1,6 +1,7 @@
 ### This script removes outliers and creates averages for student project collated steering data academic year 2019-2020
 # import libraries
 library("tidyverse")
+library(xlsx)
 #library("brms")
 #library(ggplot2)
 #library(brmstools)
@@ -28,7 +29,7 @@ steerdata <- steerdata %>%
 
 # Create a  trial id
 steerdata <- steerdata %>%
-  mutate(trialid = paste(ppid, block, maxyr, bend, dn, sep = "_"))
+  mutate(trialid = paste(ppid, block, maxyr, failurepoint, bend, dn, sep = "_"))
 
 # label failure point tobe used as a factor, allows onsettime to be used to calculate reaction times
 steerdata <- steerdata %>% 
@@ -60,8 +61,9 @@ steerdata$failurepoint <- as.factor(steerdata$failurepoint)
 
 # create trial counts per condition and create trial averages
 steerdata_trialavgs <- steerdata  %>% 
-  group_by(ppid, block, maxyr, onsettime, block) %>% 
+  group_by(ppid, block, maxyr, failurepoint, trialid) %>% 
   summarize(rt = disengage_rt(onsettime, timestamp_trial, autoflag),
+            onsettime = first(onsettime),
             swa_var = sd(sw_angle),
             mean_swa_vel = mean(diff(sw_angle)),
             #sdlp = sd(steeringbias),
@@ -80,7 +82,7 @@ print(trial_cndt)
 grandmeans <- steerdata_trialavgs %>% 
   ungroup() %>% 
   filter(rt > 0) %>% 
-  group_by(maxyr, onsettime) %>%
+  group_by(maxyr, failurepoint) %>%
   summarise(mn_rt = mean(rt, na.rm= T),
             sd_rt = sd(rt, na.rm = T),
             mn_swa_var = mean(swa_var),
@@ -97,32 +99,5 @@ grandmeans <- steerdata_trialavgs %>%
             sd_disengaged = sd(disengaged),
             perc_takeover = sum(disengaged)/n())
 
-#need to save separate measures
-OUT <- openxlsx::createWorkbook()
-addsheet <- function(OUT, varname){
-  
-  var = as.symbol(varname)
-  steercndts_wide <- steergaze_united %>% 
-    select(condition, ppid, !!var) %>%  
-    spread(key = condition, value = !!var)
-  
-  addWorksheet(OUT, varname)
-  writeData(OUT, sheet=varname, x = steercndts_wide)  
-  
-}
 
-addsheet(OUT, "mn_rt")
-addsheet(OUT, "sd_rt")
-addsheet(OUT, "mn_swa_var")
-addsheet(OUT, "sd_swa_var")
-addsheet(OUT, "mn_swa_vel")
-addsheet(OUT, "sd_swa_vel")
-addsheet(OUT, "mn_sb")
-addsheet(OUT, "sd_sb")
-addsheet(OUT, "mn_rms")
-addsheet(OUT, "sd_rms")
-addsheet(OUT, "mn_disengaged")
-addsheet(OUT, "sd_disengaged")
-addsheet(OUT, "perc_takeover")
-
-openxlsx::saveWorkbook(OUT, "orca_conditionaverages_wideformat2.xlsx")
+write.xlsx(steerdata_trialavgs, "C:/VENLAB data/ClothoidTrackDevelopment/4Students/steerdata_trialavgs.xlsx")
