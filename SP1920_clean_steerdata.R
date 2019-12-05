@@ -1,7 +1,7 @@
 ### This script removes outliers and creates averages for student project collated steering data academic year 2019-2020
 # import libraries
 library("tidyverse")
-library(xlsx)
+#library(xlsx)
 #library("brms")
 #library(ggplot2)
 #library(brmstools)
@@ -27,10 +27,6 @@ steerdata = read_csv("collated_steering.csv")
 steerdata <- steerdata %>% 
   mutate(bend = ifelse(bend < 0, "left", "right"))
 
-# Create a  trial id
-steerdata <- steerdata %>%
-  mutate(trialid = paste(ppid, block, maxyr, failurepoint, bend, dn, sep = "_"))
-
 # label failure point tobe used as a factor, allows onsettime to be used to calculate reaction times
 steerdata <- steerdata %>% 
   mutate(failurepoint = case_when(onsettime == 1.5 ~ "Straight1",
@@ -39,6 +35,10 @@ steerdata <- steerdata %>%
                                   onsettime == 11 ~ "Cloth2",
                                   onsettime %in% c(15, 17) ~ "Straight2" 
   ))
+
+# Create a  trial id
+steerdata <- steerdata %>%
+  mutate(trialid = paste(ppid, block, maxyr, failurepoint, bend, dn, sep = "_"))
 
 #create function retrieving rt.
 disengage_rt <- function(onsettime, timestamp_trial, autoflag){
@@ -71,19 +71,15 @@ steerdata_trialavgs <- steerdata  %>%
             #rms = mean(sqrt(steeringbias^2)),
             yr_var = sd(yr_sec),
             disengaged = ifelse(is.na(rt), 0, 1)
-  )
+            )
 
-steerdata_trialavgs <- steerdata_trialavgs %>%
-  mutate(trialn_cndt = 1:n())
-
-print(trial_cndt)
-
-#calculate grand means of the main measures for imputing.
+#calculate grand means of the main measures for failure conditions
 grandmeans <- steerdata_trialavgs %>% 
   ungroup() %>% 
   filter(rt > 0) %>% 
   group_by(maxyr, failurepoint) %>%
-  summarise(mn_rt = mean(rt, na.rm= T),
+  summarise(onsettime = first(onsettime),
+            mn_rt = mean(rt, na.rm= T),
             sd_rt = sd(rt, na.rm = T),
             mn_swa_var = mean(swa_var),
             sd_swa_var = sd(swa_var),
@@ -97,7 +93,9 @@ grandmeans <- steerdata_trialavgs %>%
             #sd_rms = sd(rms),
             mn_disengaged = mean(disengaged),
             sd_disengaged = sd(disengaged),
-            perc_takeover = sum(disengaged)/n())
+            perc_takeover = sum(disengaged)/n()
+            )
 
+write.csv(steerdata_trialavgs,"C:/VENLAB data/ClothoidTrackDevelopment/4Students/steerdata_trialavgs.csv", row.names = FALSE)
+write.csv(grandmeans,"C:/VENLAB data/ClothoidTrackDevelopment/4Students/grandmeans.csv", row.names = FALSE)
 
-write.xlsx(steerdata_trialavgs, "C:/VENLAB data/ClothoidTrackDevelopment/4Students/steerdata_trialavgs.xlsx")
