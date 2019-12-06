@@ -12,7 +12,9 @@ library("tidyverse")
 
 # set working directory
 #setwd("C:/VENLAb data/ClothoidTrackDevelopment/Analysis")
-setwd("C:/VENLAb data/ClothoidTrackDevelopment/Data")
+#setwd("C:/VENLAb data/ClothoidTrackDevelopment/Data")
+
+setwd("C:/Users/pscmgo/OneDrive for Business/PhD/Project/Experiment_Code/ClothoidTrackDevelopment")
 
 #read .csv
 steerdata = read_csv("collated_steering.csv", col_names = TRUE)
@@ -27,7 +29,7 @@ steerdata = read_csv("collated_steering.csv", col_names = TRUE)
 steerdata <- steerdata %>% 
   mutate(bend = ifelse(bend < 0, "left", "right"))
 
-# label failure point tobe used as a factor, allows onsettime to be used to calculate reaction times
+# label failure point to be used as a factor, allows onsettime to be used to calculate reaction times
 steerdata <- steerdata %>% 
   mutate(failurepoint = case_when(onsettime == 1.5 ~ "Straight1",
                                   onsettime == 5 ~ "Cloth1",
