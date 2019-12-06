@@ -30,6 +30,12 @@ steerdata <- steerdata %>%
   mutate(bend = ifelse(bend < 0, "left", "right"))
 
 # label failure point to be used as a factor, allows onsettime to be used to calculate reaction times
+
+# You seem to be creating some NA values when you compute the failure point. For example you have onset
+# times that are equal to 15 but you do not label these. Do these have a condition type? That'll be way
+# you create NA values in your final trial/condition average CSVs. Unsure if this is a problem, just
+# thought I'd note it. 
+
 steerdata <- steerdata %>% 
   mutate(failurepoint = case_when(onsettime == 1.5 ~ "Straight1",
                                   onsettime == 5 ~ "Cloth1",
@@ -97,6 +103,8 @@ conditionavgs <- steerdata_trialavgs %>%
             sd_disengaged = sd(disengaged),
             perc_takeover = sum(disengaged)/n()
             )
+
+
 
 write.csv(steerdata_trialavgs,"C:/VENLAB data/ClothoidTrackDevelopment/4Students/trialavgs.csv", row.names = FALSE)
 write.csv(conditionavgs,"C:/VENLAB data/ClothoidTrackDevelopment/4Students/conditionavgs.csv", row.names = FALSE)
