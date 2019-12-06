@@ -33,7 +33,7 @@ steerdata <- steerdata %>%
                                   onsettime == 5 ~ "Cloth1",
                                   onsettime == 8 ~ "Apex",
                                   onsettime == 11 ~ "Cloth2",
-                                  onsettime == 17 ~ "NoFail" 
+                                  onsettime == 17 ~ "NoFailure" 
   ))
 
 # Create a  trial id
